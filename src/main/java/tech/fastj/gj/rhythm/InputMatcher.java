@@ -13,7 +13,7 @@ public record InputMatcher(Conductor conductor) implements KeyboardActionListene
     @Override
     public void onKeyRecentlyPressed(KeyboardStateEvent keyboardStateEvent) {
         if (keyboardStateEvent.getKey() == Keys.Left) {
-            double inputBeatPosition = ((System.nanoTime() / 1_000_000_000d) - conductor.dspSongTime) / conductor.secPerBeat;
+            double inputBeatPosition = (((System.nanoTime() / 1_000_000_000d) - conductor.dspSongTime) / conductor.secPerBeat) - conductor.firstBeatOffset;
             FastJEngine.trace("arrow key pressed at {}", inputBeatPosition);
             checkNotes(inputBeatPosition);
         }

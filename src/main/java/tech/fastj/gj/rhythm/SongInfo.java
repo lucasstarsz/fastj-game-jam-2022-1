@@ -7,13 +7,13 @@ public class SongInfo {
     private final double bpm;
     private final double[] notes;
     int nextIndex;
-    private final int notePeekCount;
+    private final int beatPeekCount;
 
-    public SongInfo(double bpm, int notePeekCount, double[] notes) {
+    public SongInfo(double bpm, int beatPeekCount, double[] notes) {
         this.bpm = bpm;
         this.notes = notes;
         this.nextIndex = 0;
-        this.notePeekCount = notePeekCount;
+        this.beatPeekCount = beatPeekCount;
     }
 
     public double getBpm() {
@@ -28,8 +28,8 @@ public class SongInfo {
         return notes.length;
     }
 
-    public int getNotePeekCount() {
-        return notePeekCount;
+    public int getBeatPeekCount() {
+        return beatPeekCount;
     }
 
     public int findIndex(double beat) {

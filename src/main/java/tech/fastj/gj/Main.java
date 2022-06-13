@@ -34,19 +34,13 @@ public class Main extends SimpleManager {
     };
     private static final double StackAttackBPM = 184.0d;
 
-    private Conductor conductor;
-
     @Override
     public void init(FastJCanvas canvas) {
         Path audioPath = Path.of("audio/Stack_Attack_is_Back.wav");
         StreamedAudio music = FastJEngine.getAudioManager().loadStreamedAudio(audioPath);
-        for (int i = 0; i < StackAttackNotes.length; i++) {
-            StackAttackNotes[i] -= 1;
-        }
 
         SongInfo stackAttackInfo = new SongInfo(StackAttackBPM, 4, StackAttackNotes);
-
-        conductor = new Conductor(music, stackAttackInfo, StackAttackBPM, this);
+        Conductor conductor = new Conductor(music, stackAttackInfo, StackAttackBPM, -1, this);
         drawableManager.addGameObject(conductor);
 
         InputMatcher matcher = new InputMatcher(conductor);
@@ -72,10 +66,7 @@ public class Main extends SimpleManager {
     }
 
     public static void main(String[] args) {
-        Main main = new Main();
-        FastJEngine.init("hello", main);
+        FastJEngine.init("rhythm test", new Main());
         FastJEngine.run();
-        System.out.println("stop");
-        main.conductor.musicSource.stop();
     }
 }

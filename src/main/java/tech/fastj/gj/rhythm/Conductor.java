@@ -27,13 +27,7 @@ public class Conductor extends GameObject implements Behavior {
     public SongInfo musicInfo;
 
     public Conductor(Audio musicSource, SongInfo musicInfo, double songBpm, BehaviorHandler behaviorHandler) {
-        this.musicSource = musicSource;
-        this.musicInfo = musicInfo;
-        this.songBpm = songBpm;
-        this.secPerBeat = 60d / songBpm;
-        this.firstBeatOffset = 0;
-        setCollisionPath(DrawUtil.createPath(DrawUtil.createBox(Pointf.origin(), 0f)));
-        addBehavior(this, behaviorHandler);
+        this(musicSource, musicInfo, songBpm, 0, behaviorHandler);
     }
 
     public Conductor(Audio musicSource, SongInfo musicInfo, double songBpm, double firstBeatOffset, BehaviorHandler behaviorHandler) {
@@ -106,11 +100,11 @@ public class Conductor extends GameObject implements Behavior {
 
     @Override
     public void update(GameObject gameObject) {
-        songPosition = (System.nanoTime() / 1_000_000_000d) - dspSongTime;
+        songPosition = (System.nanoTime() / 1_000_000_000d) - dspSongTime - (firstBeatOffset * secPerBeat);
         songPositionInBeats = songPosition / secPerBeat;
 
-        if (musicInfo.nextIndex < musicInfo.getNotesLength() && musicInfo.getNote(musicInfo.nextIndex) < songPositionInBeats + musicInfo.getNotePeekCount()) {
-            FastJEngine.log("spawned new music note at {}", musicInfo.getNote(musicInfo.nextIndex));
+        if (musicInfo.nextIndex < musicInfo.getNotesLength() && musicInfo.getNote(musicInfo.nextIndex) < songPositionInBeats + musicInfo.getBeatPeekCount()) {
+            FastJEngine.log("spawned new music note at: {}", musicInfo.getNote(musicInfo.nextIndex));
 
             musicInfo.nextIndex++;
         }
