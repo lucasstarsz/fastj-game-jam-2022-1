@@ -16,5 +16,5 @@ repositories.maven {
 }
 repositories.mavenCentral()
 
-dependencies.implementation("com.github.fastjengine:FastJ:edfadb65f1")
+dependencies.implementation("com.github.lucasstarsz:FastJ:98b89d6e23")
 dependencies.implementation("org.slf4j:slf4j-simple:2.0.0-alpha7")

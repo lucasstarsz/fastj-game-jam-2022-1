@@ -9,11 +9,12 @@ import tech.fastj.input.keyboard.events.KeyboardStateEvent;
 public record InputMatcher(Conductor conductor) implements KeyboardActionListener {
 
     private static final double MaxNoteDistance = 0.25d;
+    private static final double PerfectNoteDistance = 0.125d;
 
     @Override
     public void onKeyRecentlyPressed(KeyboardStateEvent keyboardStateEvent) {
         if (keyboardStateEvent.getKey() == Keys.Left) {
-            double inputBeatPosition = (((System.nanoTime() / 1_000_000_000d) - conductor.dspSongTime) / conductor.secPerBeat) - conductor.firstBeatOffset;
+            double inputBeatPosition = (((keyboardStateEvent.getTimestamp() / 1_000_000_000d) - conductor.dspSongTime) / conductor.secPerBeat) - conductor.firstBeatOffset;
             FastJEngine.trace("arrow key pressed at {}", inputBeatPosition);
             checkNotes(inputBeatPosition);
         }
@@ -39,10 +40,10 @@ public record InputMatcher(Conductor conductor) implements KeyboardActionListene
     }
 
     private void checkNote(double nextNoteDistance, double inputBeatPosition, String helpfulTip) {
-        if (nextNoteDistance > MaxNoteDistance) {
+        if (nextNoteDistance > MaxNoteDistance * (conductor.songBpm / 120d)) {
             FastJEngine.log("extra note at {}", inputBeatPosition);
         } else {
-            FastJEngine.log("note was {} beats away from next note. {}", nextNoteDistance, nextNoteDistance < 0.125 ? "Perfect!" : helpfulTip);
+            FastJEngine.log("note was {} beats away from next note. {}", nextNoteDistance, nextNoteDistance < PerfectNoteDistance * (conductor.songBpm / 120d) ? "Perfect!" : helpfulTip);
         }
     }
 }
