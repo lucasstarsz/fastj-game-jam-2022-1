@@ -12,8 +12,11 @@ import tech.fastj.systems.behaviors.BehaviorHandler;
 import tech.fastj.systems.control.Scene;
 import tech.fastj.systems.control.SimpleManager;
 
-import javax.sound.sampled.LineEvent;
 import java.awt.Graphics2D;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.function.DoubleConsumer;
 
 public class Conductor extends GameObject implements Behavior {
 
@@ -25,6 +28,8 @@ public class Conductor extends GameObject implements Behavior {
     public double dspSongTime;
     public Audio musicSource;
     public SongInfo musicInfo;
+    private DoubleConsumer spawnMusicNote;
+    private final ScheduledExecutorService musicPlayer = Executors.newSingleThreadScheduledExecutor();
 
     public Conductor(Audio musicSource, SongInfo musicInfo, double songBpm, BehaviorHandler behaviorHandler) {
         this(musicSource, musicInfo, songBpm, 0, behaviorHandler);
@@ -38,6 +43,10 @@ public class Conductor extends GameObject implements Behavior {
         this.firstBeatOffset = firstBeatOffset;
         setCollisionPath(DrawUtil.createPath(DrawUtil.createBox(Pointf.origin(), 0f)));
         addBehavior(this, behaviorHandler);
+    }
+
+    public void setSpawnMusicNote(DoubleConsumer spawnMusicNote) {
+        this.spawnMusicNote = spawnMusicNote;
     }
 
     @Override
@@ -57,6 +66,7 @@ public class Conductor extends GameObject implements Behavior {
     @Override
     public void destroy() {
         musicSource.stop();
+        musicPlayer.shutdownNow();
     }
 
     @Override
@@ -85,13 +95,9 @@ public class Conductor extends GameObject implements Behavior {
             }
         });
 
-        musicSource.getAudioSource().addLineListener(event -> {
-            if (event.getType() == LineEvent.Type.START && dspSongTime == 0) {
-                dspSongTime = System.nanoTime() / 1_000_000_000d;
-            }
-        });
-
-        musicSource.play();
+        double songDelay = 60d / musicInfo.getBpm() * musicInfo.getBeatPeekCount() * 1_000_000_000d;
+        dspSongTime = (System.nanoTime() + songDelay) / 1_000_000_000d;
+        musicPlayer.schedule(musicSource::play, (long) songDelay, TimeUnit.NANOSECONDS);
     }
 
     @Override
@@ -104,8 +110,10 @@ public class Conductor extends GameObject implements Behavior {
         songPositionInBeats = songPosition / secPerBeat;
 
         if (musicInfo.nextIndex < musicInfo.getNotesLength() && musicInfo.getNote(musicInfo.nextIndex) < songPositionInBeats + musicInfo.getBeatPeekCount()) {
-            FastJEngine.log("spawned new music note at: {}", musicInfo.getNote(musicInfo.nextIndex));
+            double note = musicInfo.getNote(musicInfo.nextIndex);
+            spawnMusicNote.accept(note);
 
+            FastJEngine.log("added new music note at beat {}", note);
             musicInfo.nextIndex++;
         }
     }
