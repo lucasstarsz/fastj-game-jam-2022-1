@@ -32,8 +32,6 @@ public class Notice extends GameObject implements Behavior {
     /** {@code String} representing default text -- an empty string. */
     public static final String DefaultText = "";
 
-    private static final int FadeTime = 3;
-
     private static final Pointf OriginInstance = Pointf.origin();
     private static final BufferedImage GraphicsHelper = new BufferedImage(1280, 720, BufferedImage.TYPE_INT_ARGB);
 
