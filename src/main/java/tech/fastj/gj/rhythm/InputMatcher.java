@@ -29,7 +29,7 @@ public record InputMatcher(Set<Double> consumedNotes, Conductor conductor,
 
         if (conductor.musicInfo.getLaneKeys().contains(keyboardStateEvent.getKey())) {
             double inputBeatPosition = (((keyboardStateEvent.getTimestamp() / 1_000_000_000d) - conductor.dspSongTime) / conductor.secPerBeat) - conductor.firstBeatOffset;
-            FastJEngine.trace("arrow key pressed at {}", inputBeatPosition);
+            FastJEngine.trace("{} arrow key pressed at {}", keyboardStateEvent.getKey(), inputBeatPosition);
             checkNotes(inputBeatPosition, keyboardStateEvent.getKey());
         }
     }
@@ -46,7 +46,7 @@ public record InputMatcher(Set<Double> consumedNotes, Conductor conductor,
         double nextNote = 0;
         if (hasNext) {
             nextNote = conductor.musicInfo.getNote(nextIndex);
-            FastJEngine.trace("checking {} next", nextNote);
+            FastJEngine.trace("has next on {}", nextNote);
         }
         double nextNoteDistance = 0;
         if (hasNext) {
@@ -57,25 +57,27 @@ public record InputMatcher(Set<Double> consumedNotes, Conductor conductor,
         double previousNote = 0;
         if (hasPrevious) {
             previousNote = conductor.musicInfo.getNote(nextIndex - 1);
-            FastJEngine.trace("checking {} previous", previousNote);
+            FastJEngine.trace("has previous on {}", previousNote);
         }
         double lastNoteDistance = 0;
         if (hasPrevious) {
             lastNoteDistance = Math.abs(inputBeatPosition - previousNote);
         }
 
-        if (!hasPrevious && hasNext || Double.compare(lastNoteDistance, nextNoteDistance) >= 0) {
-            if (!consumedNotes.contains(nextNote) && checkNote(nextNoteDistance, inputBeatPosition, "Early.")) {
+        if (!hasPrevious && hasNext || hasPrevious && hasNext && Double.compare(lastNoteDistance, nextNoteDistance) >= 0) {
+            if (!consumedNotes.contains(nextNote) && checkNote(nextNoteDistance, inputBeatPosition, "next", "Early.")) {
                 consumedNotes.add(nextNote);
+                FastJEngine.trace("consumed {}", nextNote);
             }
         } else {
-            if (!consumedNotes.contains(previousNote) && checkNote(lastNoteDistance, inputBeatPosition, "Late.")) {
+            if (!consumedNotes.contains(previousNote) && checkNote(lastNoteDistance, inputBeatPosition, "previous", "Late.")) {
                 consumedNotes.add(previousNote);
+                FastJEngine.trace("consumed {}", previousNote);
             }
         }
     }
 
-    private boolean checkNote(double nextNoteDistance, double inputBeatPosition, String helpfulTip) {
+    private boolean checkNote(double nextNoteDistance, double inputBeatPosition, String nextOrPrevious, String helpfulTip) {
         double adjustedMaxDistance = MaxNoteDistance * (conductor.songBpm / 120d);
         if (nextNoteDistance > adjustedMaxDistance) {
             FastJEngine.log("extra note at {}", inputBeatPosition);
@@ -83,7 +85,7 @@ public record InputMatcher(Set<Double> consumedNotes, Conductor conductor,
         } else {
             double adjustedPerfectDistance = PerfectNoteDistance * (conductor.songBpm / 120d);
             String resultMessage = nextNoteDistance < adjustedPerfectDistance ? "Perfect!" : helpfulTip;
-            FastJEngine.log("Input was {} beats away from next note. {}", nextNoteDistance, resultMessage);
+            FastJEngine.log("Input was {} beats away from {} note. {}", nextNoteDistance, nextOrPrevious, resultMessage);
             FastJEngine.runAfterRender(() -> onSpawnNotice.accept(resultMessage));
             return true;
         }

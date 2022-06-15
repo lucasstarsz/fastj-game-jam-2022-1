@@ -45,7 +45,7 @@ public class Test extends SimpleManager {
         Conductor conductor = new Conductor(stackAttackInfo, this);
 
         conductor.setSpawnMusicNote((note, noteLane) -> {
-            Pointf noteStartingLocation = new Pointf(canvas.getCanvasCenter().x + (noteLane * NoteSize * 2), -NoteSize / 2f);
+            Pointf noteStartingLocation = new Pointf((canvas.getCanvasCenter().x * 1.5f) + (noteLane * NoteSize * 2), -NoteSize / 2f);
             MusicNote musicNote = new MusicNote(noteStartingLocation, NoteSize)
                     .setFill(DrawUtil.randomColor())
                     .setOutline(MusicNote.DefaultOutlineStroke, DrawUtil.randomColor());
