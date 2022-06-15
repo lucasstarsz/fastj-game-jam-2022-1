@@ -7,6 +7,7 @@ import tech.fastj.graphics.display.FastJCanvas;
 import tech.fastj.graphics.display.RenderSettings;
 import tech.fastj.graphics.util.DrawUtil;
 
+import tech.fastj.input.keyboard.Keys;
 import tech.fastj.systems.audio.StreamedAudio;
 import tech.fastj.systems.control.SimpleManager;
 
@@ -14,6 +15,7 @@ import java.awt.Color;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.nio.file.Path;
+import java.util.Map;
 
 import tech.fastj.gj.gameobjects.MusicNote;
 import tech.fastj.gj.rhythm.Conductor;
@@ -40,6 +42,28 @@ public class Test extends SimpleManager {
             49.5f, 51f, 52f,
             53f, 54.5f,
     };
+    private static final int[] StackAttackNoteLanes = {
+            2, 1, 2,
+            1, 3, 2,
+            2, 1, 2,
+            1, 3, 2,
+            1, 3, 3, 3, 2, 1,
+            1, 3, 3, 3,
+
+            2, 1, 2,
+            1, 3, 2,
+            1, 2,
+
+            2, 1, 2,
+            1, 3, 2,
+            1, 2,
+    };
+    private static final Map<Integer, Keys> StackAttackLaneKeys = Map.of(
+            1, Keys.Left,
+            2, Keys.Down,
+            3, Keys.Right
+    );
+
     private static final double StackAttackBPM = 184.0d;
 
     public static final float NoteSize = 25f;
@@ -50,11 +74,17 @@ public class Test extends SimpleManager {
         Path audioPath = Path.of("audio/Stack_Attack_is_Back.wav");
         StreamedAudio music = FastJEngine.getAudioManager().loadStreamedAudio(audioPath);
 
-        SongInfo stackAttackInfo = new SongInfo(StackAttackBPM, 4, StackAttackNotes);
+        SongInfo stackAttackInfo = new SongInfo(
+                StackAttackBPM,
+                4,
+                StackAttackNotes,
+                StackAttackNoteLanes,
+                StackAttackLaneKeys
+        );
         Conductor conductor = new Conductor(music, stackAttackInfo, StackAttackBPM, -1, this);
 
-        conductor.setSpawnMusicNote(note -> {
-            Pointf noteStartingLocation = new Pointf(canvas.getCanvasCenter().x, -NoteSize / 2f);
+        conductor.setSpawnMusicNote((note, noteLane) -> {
+            Pointf noteStartingLocation = new Pointf(canvas.getCanvasCenter().x + (noteLane * NoteSize * 2), -NoteSize / 2f);
             MusicNote musicNote = new MusicNote(noteStartingLocation, NoteSize)
                     .setFill(DrawUtil.randomColor())
                     .setOutline(MusicNote.DefaultOutlineStroke, DrawUtil.randomColor());

@@ -16,7 +16,7 @@ import java.awt.Graphics2D;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.DoubleConsumer;
+import java.util.function.BiConsumer;
 
 public class Conductor extends GameObject implements Behavior {
 
@@ -28,7 +28,7 @@ public class Conductor extends GameObject implements Behavior {
     public double dspSongTime;
     public Audio musicSource;
     public SongInfo musicInfo;
-    private DoubleConsumer spawnMusicNote;
+    private BiConsumer<Double, Integer> spawnMusicNote;
     private final ScheduledExecutorService musicPlayer = Executors.newSingleThreadScheduledExecutor();
 
     public Conductor(Audio musicSource, SongInfo musicInfo, double songBpm, BehaviorHandler behaviorHandler) {
@@ -45,7 +45,7 @@ public class Conductor extends GameObject implements Behavior {
         addBehavior(this, behaviorHandler);
     }
 
-    public void setSpawnMusicNote(DoubleConsumer spawnMusicNote) {
+    public void setSpawnMusicNote(BiConsumer<Double, Integer> spawnMusicNote) {
         this.spawnMusicNote = spawnMusicNote;
     }
 
@@ -111,7 +111,8 @@ public class Conductor extends GameObject implements Behavior {
 
         if (musicInfo.nextIndex < musicInfo.getNotesLength() && musicInfo.getNote(musicInfo.nextIndex) < songPositionInBeats + musicInfo.getBeatPeekCount()) {
             double note = musicInfo.getNote(musicInfo.nextIndex);
-            spawnMusicNote.accept(note);
+            int noteLane = musicInfo.getNoteLane(musicInfo.nextIndex);
+            spawnMusicNote.accept(note, noteLane);
 
             FastJEngine.log("added new music note {} at beat {}", note, songPositionInBeats);
             musicInfo.nextIndex++;

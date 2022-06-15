@@ -27,14 +27,14 @@ public record InputMatcher(Set<Double> consumedNotes, Conductor conductor,
             return;
         }
 
-        if (keyboardStateEvent.getKey() == Keys.Left) {
+        if (conductor.musicInfo.getLaneKeys().contains(keyboardStateEvent.getKey())) {
             double inputBeatPosition = (((keyboardStateEvent.getTimestamp() / 1_000_000_000d) - conductor.dspSongTime) / conductor.secPerBeat) - conductor.firstBeatOffset;
             FastJEngine.trace("arrow key pressed at {}", inputBeatPosition);
-            checkNotes(inputBeatPosition);
+            checkNotes(inputBeatPosition, keyboardStateEvent.getKey());
         }
     }
 
-    private void checkNotes(double inputBeatPosition) {
+    private void checkNotes(double inputBeatPosition, Keys inputKey) {
         if (inputBeatPosition > conductor.musicInfo.getNote(conductor.musicInfo.getNotesLength() - 1) + MaxNoteDistance) {
             FastJEngine.log("extra note at {}", inputBeatPosition);
             return;
@@ -42,7 +42,7 @@ public record InputMatcher(Set<Double> consumedNotes, Conductor conductor,
 
         int nextIndex = conductor.musicInfo.findIndex(inputBeatPosition, MaxNoteDistance);
 
-        boolean hasNext = nextIndex != -1;
+        boolean hasNext = nextIndex != -1 && inputKey == conductor.musicInfo.getLaneKey(conductor.musicInfo.getNoteLane(nextIndex));
         double nextNote = 0;
         if (hasNext) {
             nextNote = conductor.musicInfo.getNote(nextIndex);
@@ -53,7 +53,7 @@ public record InputMatcher(Set<Double> consumedNotes, Conductor conductor,
             nextNoteDistance = Math.abs(nextNote - inputBeatPosition);
         }
 
-        boolean hasPrevious = nextIndex - 1 >= 0;
+        boolean hasPrevious = nextIndex - 1 >= 0 && inputKey == conductor.musicInfo.getLaneKey(conductor.musicInfo.getNoteLane(nextIndex - 1));
         double previousNote = 0;
         if (hasPrevious) {
             previousNote = conductor.musicInfo.getNote(nextIndex - 1);
