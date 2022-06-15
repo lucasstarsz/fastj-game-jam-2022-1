@@ -22,7 +22,7 @@ import tech.fastj.gj.rhythm.SongInfo;
 import tech.fastj.gj.scripts.MusicNoteMovement;
 import tech.fastj.gj.ui.Notice;
 
-public class Main extends SimpleManager {
+public class Test extends SimpleManager {
 
     private static final double[] StackAttackNotes = {
             1f, 2.5f, 4f,
@@ -96,7 +96,7 @@ public class Main extends SimpleManager {
     }
 
     public static void main(String[] args) {
-        FastJEngine.init("rhythm test", new Main());
+        FastJEngine.init("rhythm test", new Test());
         FastJEngine.setTargetUPS(1);
         FastJEngine.configureLogging(LogLevel.Debug);
         FastJEngine.run();

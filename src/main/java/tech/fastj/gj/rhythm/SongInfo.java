@@ -24,7 +24,7 @@ public class SongInfo {
         return notes[index];
     }
 
-    public double getNotesLength() {
+    public int getNotesLength() {
         return notes.length;
     }
 
@@ -32,8 +32,8 @@ public class SongInfo {
         return beatPeekCount;
     }
 
-    public int findIndex(double beat) {
-        if (beat >= notes[notes.length - 1]) {
+    public int findIndex(double beat, double maxBeatDistance) {
+        if (beat + maxBeatDistance >= notes[notes.length - 1]) {
             return -1;
         }
 
@@ -44,6 +44,6 @@ public class SongInfo {
             }
         }
 
-        return -1;
+        return notes.length - 1;
     }
 }

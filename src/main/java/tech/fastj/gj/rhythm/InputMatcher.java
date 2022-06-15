@@ -7,12 +7,19 @@ import tech.fastj.input.keyboard.Keys;
 import tech.fastj.input.keyboard.events.KeyboardStateEvent;
 import tech.fastj.systems.audio.state.PlaybackState;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Consumer;
 
-public record InputMatcher(Conductor conductor, Consumer<String> onSpawnNotice) implements KeyboardActionListener {
+public record InputMatcher(Set<Double> consumedNotes, Conductor conductor,
+                           Consumer<String> onSpawnNotice) implements KeyboardActionListener {
 
     private static final double MaxNoteDistance = 0.25d;
     private static final double PerfectNoteDistance = 0.125d;
+
+    public InputMatcher(Conductor conductor, Consumer<String> onSpawnNotice) {
+        this(new HashSet<>(), conductor, onSpawnNotice);
+    }
 
     @Override
     public void onKeyRecentlyPressed(KeyboardStateEvent keyboardStateEvent) {
@@ -28,38 +35,57 @@ public record InputMatcher(Conductor conductor, Consumer<String> onSpawnNotice) 
     }
 
     private void checkNotes(double inputBeatPosition) {
-        int nextIndex = conductor.musicInfo.findIndex(inputBeatPosition);
-        if (nextIndex >= conductor.musicInfo.getNotesLength() || nextIndex == -1) {
+        if (inputBeatPosition > conductor.musicInfo.getNote(conductor.musicInfo.getNotesLength() - 1) + MaxNoteDistance) {
             FastJEngine.log("extra note at {}", inputBeatPosition);
             return;
         }
-        boolean hasPrevious = nextIndex - 1 >= 0;
 
-        FastJEngine.trace("checking {} next", conductor.musicInfo.getNote(nextIndex));
-        if (hasPrevious) {
-            FastJEngine.trace("checking {} previous", conductor.musicInfo.getNote(nextIndex - 1));
+        int nextIndex = conductor.musicInfo.findIndex(inputBeatPosition, MaxNoteDistance);
+
+        boolean hasNext = nextIndex != -1;
+        double nextNote = 0;
+        if (hasNext) {
+            nextNote = conductor.musicInfo.getNote(nextIndex);
+            FastJEngine.trace("checking {} next", nextNote);
+        }
+        double nextNoteDistance = 0;
+        if (hasNext) {
+            nextNoteDistance = Math.abs(nextNote - inputBeatPosition);
         }
 
-        double nextNoteDistance = Math.abs(conductor.musicInfo.getNote(nextIndex) - inputBeatPosition);
+        boolean hasPrevious = nextIndex - 1 >= 0;
+        double previousNote = 0;
+        if (hasPrevious) {
+            previousNote = conductor.musicInfo.getNote(nextIndex - 1);
+            FastJEngine.trace("checking {} previous", previousNote);
+        }
         double lastNoteDistance = 0;
         if (hasPrevious) {
-            lastNoteDistance = Math.abs(inputBeatPosition - conductor.musicInfo.getNote(nextIndex - 1));
+            lastNoteDistance = Math.abs(inputBeatPosition - previousNote);
         }
 
-        if (!hasPrevious || Double.compare(lastNoteDistance, nextNoteDistance) >= 0) {
-            checkNote(nextNoteDistance, inputBeatPosition, "Early.");
+        if (!hasPrevious && hasNext || Double.compare(lastNoteDistance, nextNoteDistance) >= 0) {
+            if (!consumedNotes.contains(nextNote) && checkNote(nextNoteDistance, inputBeatPosition, "Early.")) {
+                consumedNotes.add(nextNote);
+            }
         } else {
-            checkNote(lastNoteDistance, inputBeatPosition, "Late.");
+            if (!consumedNotes.contains(previousNote) && checkNote(lastNoteDistance, inputBeatPosition, "Late.")) {
+                consumedNotes.add(previousNote);
+            }
         }
     }
 
-    private void checkNote(double nextNoteDistance, double inputBeatPosition, String helpfulTip) {
-        if (nextNoteDistance > MaxNoteDistance * (conductor.songBpm / 120d)) {
+    private boolean checkNote(double nextNoteDistance, double inputBeatPosition, String helpfulTip) {
+        double adjustedMaxDistance = MaxNoteDistance * (conductor.songBpm / 120d);
+        if (nextNoteDistance > adjustedMaxDistance) {
             FastJEngine.log("extra note at {}", inputBeatPosition);
+            return false;
         } else {
-            String resultMessage = nextNoteDistance < PerfectNoteDistance * (conductor.songBpm / 120d) ? "Perfect!" : helpfulTip;
+            double adjustedPerfectDistance = PerfectNoteDistance * (conductor.songBpm / 120d);
+            String resultMessage = nextNoteDistance < adjustedPerfectDistance ? "Perfect!" : helpfulTip;
             FastJEngine.log("Input was {} beats away from next note. {}", nextNoteDistance, resultMessage);
             FastJEngine.runAfterRender(() -> onSpawnNotice.accept(resultMessage));
+            return true;
         }
     }
 }
