@@ -42,6 +42,8 @@ public class Main extends SimpleManager {
     };
     private static final double StackAttackBPM = 184.0d;
 
+    public static final float NoteSize = 25f;
+
     @Override
     public void init(FastJCanvas canvas) {
         canvas.modifyRenderSettings(RenderSettings.Antialiasing.Enable);
@@ -50,20 +52,19 @@ public class Main extends SimpleManager {
 
         SongInfo stackAttackInfo = new SongInfo(StackAttackBPM, 4, StackAttackNotes);
         Conductor conductor = new Conductor(music, stackAttackInfo, StackAttackBPM, -1, this);
+
         conductor.setSpawnMusicNote(note -> {
-            MusicNote musicNote = new MusicNote(new Pointf(canvas.getCanvasCenter().x, 0f), 50f)
+            Pointf noteStartingLocation = new Pointf(canvas.getCanvasCenter().x, -NoteSize / 2f);
+            MusicNote musicNote = new MusicNote(noteStartingLocation, NoteSize)
                     .setFill(DrawUtil.randomColor())
                     .setOutline(MusicNote.DefaultOutlineStroke, DrawUtil.randomColor());
 
-            MusicNoteMovement musicNoteMovement = new MusicNoteMovement(
-                    conductor,
-                    note,
-                    canvas.getResolution().y - 100f
-            );
-
+            double noteTravelDistance = canvas.getResolution().y - (NoteSize * 4f);
+            MusicNoteMovement musicNoteMovement = new MusicNoteMovement(conductor, note, noteTravelDistance);
             musicNote.addLateBehavior(musicNoteMovement, this);
             drawableManager.addGameObject(musicNote);
         });
+
         drawableManager.addGameObject(conductor);
 
         InputMatcher matcher = new InputMatcher(
@@ -96,7 +97,7 @@ public class Main extends SimpleManager {
 
     public static void main(String[] args) {
         FastJEngine.init("rhythm test", new Main());
-        FastJEngine.setTargetUPS(15);
+        FastJEngine.setTargetUPS(1);
         FastJEngine.configureLogging(LogLevel.Debug);
         FastJEngine.run();
     }
