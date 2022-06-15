@@ -5,6 +5,7 @@ import tech.fastj.engine.FastJEngine;
 import tech.fastj.input.keyboard.KeyboardActionListener;
 import tech.fastj.input.keyboard.Keys;
 import tech.fastj.input.keyboard.events.KeyboardStateEvent;
+import tech.fastj.systems.audio.state.PlaybackState;
 
 import java.util.function.Consumer;
 
@@ -15,6 +16,10 @@ public record InputMatcher(Conductor conductor, Consumer<String> onSpawnNotice) 
 
     @Override
     public void onKeyRecentlyPressed(KeyboardStateEvent keyboardStateEvent) {
+        if (conductor.musicSource.getCurrentPlaybackState() != PlaybackState.Playing) {
+            return;
+        }
+
         if (keyboardStateEvent.getKey() == Keys.Left) {
             double inputBeatPosition = (((keyboardStateEvent.getTimestamp() / 1_000_000_000d) - conductor.dspSongTime) / conductor.secPerBeat) - conductor.firstBeatOffset;
             FastJEngine.trace("arrow key pressed at {}", inputBeatPosition);
