@@ -15,45 +15,46 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collection;
 
 import com.google.gson.Gson;
+import tech.fastj.gameloop.event.GameEventObserver;
 import tech.fastj.gj.gameobjects.KeyCircle;
 import tech.fastj.gj.gameobjects.MusicNote;
 import tech.fastj.gj.rhythm.Conductor;
+import tech.fastj.gj.rhythm.ConductorFinishedEvent;
 import tech.fastj.gj.rhythm.InputMatcher;
 import tech.fastj.gj.rhythm.SongInfo;
+import tech.fastj.gj.scenes.game.ResultMenu;
 import tech.fastj.gj.scripts.MusicNoteMovement;
 import tech.fastj.gj.ui.Notice;
+import tech.fastj.gj.util.FilePaths;
+import tech.fastj.gj.util.Shapes;
 
-public class Test extends SimpleManager {
-
-    public static final float NoteSize = 30f;
+public class Test extends SimpleManager implements GameEventObserver<ConductorFinishedEvent> {
 
     @Override
     public void init(FastJCanvas canvas) {
         canvas.modifyRenderSettings(RenderSettings.Antialiasing.Enable);
-        Path stackAttackJsonPath = Path.of("Stack Attack.json");
 
         Gson gson = new Gson();
         String stackAttackJson;
         try {
-            stackAttackJson = Files.readString(stackAttackJsonPath);
+            stackAttackJson = Files.readString(FilePaths.StackAttackJson);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         SongInfo stackAttackInfo = gson.fromJson(stackAttackJson, SongInfo.class);
-        Conductor conductor = new Conductor(stackAttackInfo, this);
+        Conductor conductor = new Conductor(stackAttackInfo, this, false);
 
         conductor.setSpawnMusicNote((note, noteLane) -> {
-            Pointf noteStartingLocation = new Pointf((canvas.getCanvasCenter().x * 1.5f) + (noteLane * NoteSize * 2.5f), -NoteSize / 2f);
-            MusicNote musicNote = new MusicNote(noteStartingLocation, NoteSize)
+            Pointf noteStartingLocation = new Pointf((canvas.getCanvasCenter().x * 1.5f) + (noteLane * Shapes.NoteSize * 2.5f), -Shapes.NoteSize / 2f);
+            MusicNote musicNote = new MusicNote(noteStartingLocation, Shapes.NoteSize)
                     .setFill(DrawUtil.randomColor())
                     .setOutline(MusicNote.DefaultOutlineStroke, DrawUtil.randomColor());
 
-            double noteTravelDistance = canvas.getResolution().y - (NoteSize * 4f);
+            double noteTravelDistance = canvas.getResolution().y - (Shapes.NoteSize * 4f);
             MusicNoteMovement musicNoteMovement = new MusicNoteMovement(conductor, note, noteTravelDistance);
             musicNote.addLateBehavior(musicNoteMovement, this);
             drawableManager.addGameObject(musicNote);
@@ -62,8 +63,8 @@ public class Test extends SimpleManager {
         Collection<Keys> laneKeys = conductor.musicInfo.getLaneKeys();
         int laneKeyIncrement = 1;
         for (Keys laneKey : laneKeys) {
-            Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x * 1.5f) + (laneKeyIncrement * NoteSize * 2.5f), canvas.getResolution().y - (NoteSize * 4f));
-            KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, NoteSize, "Tahoma")
+            Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x * 1.5f) + (laneKeyIncrement * Shapes.NoteSize * 2.5f), canvas.getResolution().y - (Shapes.NoteSize * 4f));
+            KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma")
                     .setFill(Color.yellow)
                     .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
                     .setTranslation(laneStartingLocation);
@@ -91,6 +92,8 @@ public class Test extends SimpleManager {
                 System.exit(0);
             }
         });
+
+        FastJEngine.getGameLoop().addEventObserver(this, ConductorFinishedEvent.class);
     }
 
     @Override
@@ -106,5 +109,10 @@ public class Test extends SimpleManager {
         FastJEngine.setTargetUPS(1);
         FastJEngine.configureLogging(LogLevel.Debug);
         FastJEngine.run();
+    }
+
+    @Override
+    public void eventReceived(ConductorFinishedEvent event) {
+        new ResultMenu(this, event);
     }
 }

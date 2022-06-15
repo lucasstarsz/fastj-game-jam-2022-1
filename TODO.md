@@ -1,0 +1,28 @@
+- [x] one input per music note
+- [x] multiple music note lanes
+- [x] loading music & notes via file
+    - [ ] music note generation tool
+- [ ] music
+    - [ ] easy jazz rhythm
+    - [ ] medium jazz rhythm
+    - [ ] hard jazz rhythm
+    - [ ] expert jazz rhythm?
+    - [ ] secret: title theme jazz rhythm???
+- [ ] sfx
+    - [ ] mistake made
+    - [ ] button hover
+    - [ ] button press
+- [ ] ui
+    - [ ] mistakes counter (stat string)
+    - [ ] pause button
+
+- [ ] art
+    - [ ] practice room
+    - [ ] characters(8 or so???)
+    - [ ] instruments
+        - [ ] synth piano
+        - [ ] marimba
+        - [ ] guitar
+        - [ ] bass
+        - [ ] drumset
+        - [ ] trombone

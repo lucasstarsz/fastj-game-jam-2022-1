@@ -8,7 +8,7 @@ group = "tech.lucasz"
 version = "1.0-SNAPSHOT"
 description = "Game made for FastJ Game Jam 2022.1."
 
-application.mainClass.set("tech.fastj.gj.Test")
+application.mainClass.set("tech.fastj.gj.FastJGameJam2022")
 application.mainModule.set("fastj.jam.main")
 
 repositories.maven {

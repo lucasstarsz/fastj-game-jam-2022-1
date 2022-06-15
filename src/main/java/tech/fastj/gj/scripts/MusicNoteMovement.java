@@ -7,6 +7,8 @@ import tech.fastj.graphics.Boundary;
 import tech.fastj.graphics.game.GameObject;
 
 import tech.fastj.systems.behaviors.Behavior;
+import tech.fastj.systems.control.LogicManager;
+import tech.fastj.systems.control.SceneManager;
 import tech.fastj.systems.control.SimpleManager;
 
 import tech.fastj.gj.rhythm.Conductor;
@@ -46,7 +48,14 @@ public class MusicNoteMovement implements Behavior {
         gameObject.setTranslation(lerpDistance);
 
         if (gameObject.getBound(Boundary.TopLeft).y > travelDistance + gameObject.height()) {
-            FastJEngine.runAfterRender(() -> gameObject.destroy(FastJEngine.<SimpleManager>getLogicManager()));
+            FastJEngine.runAfterRender(() -> {
+                LogicManager logicManager = FastJEngine.getLogicManager();
+                if (logicManager instanceof SceneManager sceneManager) {
+                    gameObject.destroy(sceneManager.getCurrentScene());
+                } else if (logicManager instanceof SimpleManager simpleManager) {
+                    gameObject.destroy(simpleManager);
+                }
+            });
         }
     }
 

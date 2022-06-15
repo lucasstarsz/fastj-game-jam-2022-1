@@ -7,6 +7,7 @@ import tech.fastj.graphics.util.DrawUtil;
 
 import tech.fastj.systems.audio.Audio;
 import tech.fastj.systems.audio.AudioEvent;
+import tech.fastj.systems.audio.state.PlaybackState;
 import tech.fastj.systems.behaviors.Behavior;
 import tech.fastj.systems.behaviors.BehaviorHandler;
 import tech.fastj.systems.control.Scene;
@@ -30,20 +31,45 @@ public class Conductor extends GameObject implements Behavior {
     public Audio musicSource;
     public SongInfo musicInfo;
     private BiConsumer<Double, Integer> spawnMusicNote;
+    private boolean isFinished;
+    private boolean isPaused;
+    private double pauseTimeOffset;
     private final ScheduledExecutorService musicPlayer = Executors.newSingleThreadScheduledExecutor();
 
-    public Conductor(SongInfo musicInfo, BehaviorHandler behaviorHandler) {
+    public Conductor(SongInfo musicInfo, BehaviorHandler behaviorHandler, boolean needsLateUpdate) {
         this.musicInfo = musicInfo;
         this.songBpm = musicInfo.getBpm();
         this.secPerBeat = 60d / songBpm;
         this.firstBeatOffset = musicInfo.getFirstBeatOffset();
         setCollisionPath(DrawUtil.createPath(DrawUtil.createBox(Pointf.origin(), 0f)));
-        addBehavior(this, behaviorHandler);
+
         this.musicSource = FastJEngine.getAudioManager().loadStreamedAudio(Path.of(musicInfo.getMusicPath()));
+
+        if (needsLateUpdate) {
+            addLateBehavior(this, behaviorHandler);
+        } else {
+            addBehavior(this, behaviorHandler);
+        }
+
     }
 
     public void setSpawnMusicNote(BiConsumer<Double, Integer> spawnMusicNote) {
         this.spawnMusicNote = spawnMusicNote;
+    }
+
+    public void setPaused(boolean paused) {
+        if (isPaused == paused) {
+            return;
+        }
+
+        isPaused = paused;
+        if (!isPaused) {
+            pauseTimeOffset += (System.nanoTime() / 1_000_000_000d) - songPosition;
+        }
+    }
+
+    public boolean isPaused() {
+        return isPaused;
     }
 
     @Override
@@ -103,7 +129,19 @@ public class Conductor extends GameObject implements Behavior {
 
     @Override
     public void update(GameObject gameObject) {
-        songPosition = (System.nanoTime() / 1_000_000_000d) - dspSongTime - (firstBeatOffset * secPerBeat);
+        if (!isFinished && musicInfo.nextIndex >= musicInfo.getNotesLength() && musicSource.getCurrentPlaybackState() == PlaybackState.Stopped) {
+            FastJEngine.log("end?????????????????????????");
+            isFinished = true;
+            ConductorFinishedEvent event = new ConductorFinishedEvent(musicInfo.getNotesLength());
+            FastJEngine.runAfterRender(() -> FastJEngine.getGameLoop().fireEvent(event));
+            return;
+        }
+
+        if (isPaused) {
+            return;
+        }
+
+        songPosition = (System.nanoTime() / 1_000_000_000d) - dspSongTime - (firstBeatOffset * secPerBeat) - pauseTimeOffset;
         songPositionInBeats = songPosition / secPerBeat;
 
         if (musicInfo.nextIndex < musicInfo.getNotesLength() && musicInfo.getNote(musicInfo.nextIndex) < songPositionInBeats + musicInfo.getBeatPeekCount()) {
@@ -113,6 +151,10 @@ public class Conductor extends GameObject implements Behavior {
 
             FastJEngine.log("added new music note {} at beat {}", note, songPositionInBeats);
             musicInfo.nextIndex++;
+        } else if (!isFinished && musicInfo.nextIndex >= musicInfo.getNotesLength() && musicSource.getCurrentPlaybackState() == PlaybackState.Stopped) {
+            isFinished = true;
+            ConductorFinishedEvent event = new ConductorFinishedEvent(musicInfo.getNotesLength());
+            FastJEngine.runAfterRender(() -> FastJEngine.getGameLoop().fireEvent(event));
         }
     }
 }

@@ -8,7 +8,9 @@ import tech.fastj.graphics.game.GameObject;
 
 import tech.fastj.systems.behaviors.Behavior;
 import tech.fastj.systems.behaviors.BehaviorHandler;
+import tech.fastj.systems.control.LogicManager;
 import tech.fastj.systems.control.Scene;
+import tech.fastj.systems.control.SceneManager;
 import tech.fastj.systems.control.SimpleManager;
 
 import java.awt.Color;
@@ -241,7 +243,14 @@ public class Notice extends GameObject implements Behavior {
     @Override
     public void update(GameObject gameObject) {
         if (fillColor.getAlpha() - 1 == 0) {
-            FastJEngine.runAfterRender(() -> gameObject.destroy(FastJEngine.<SimpleManager>getLogicManager()));
+            FastJEngine.runAfterRender(() -> {
+                LogicManager logicManager = FastJEngine.getLogicManager();
+                if (logicManager instanceof SceneManager sceneManager) {
+                    gameObject.destroy(sceneManager.getCurrentScene());
+                } else if (logicManager instanceof SimpleManager simpleManager) {
+                    gameObject.destroy(simpleManager);
+                }
+            });
         } else {
             Color moreTransparentColor = new Color(fillColor.getRed(), fillColor.getGreen(), fillColor.getBlue(), fillColor.getAlpha() - 1);
             setFill(moreTransparentColor);
