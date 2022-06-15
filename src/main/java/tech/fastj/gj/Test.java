@@ -7,6 +7,7 @@ import tech.fastj.graphics.display.FastJCanvas;
 import tech.fastj.graphics.display.RenderSettings;
 import tech.fastj.graphics.util.DrawUtil;
 
+import tech.fastj.input.keyboard.Keys;
 import tech.fastj.systems.control.SimpleManager;
 
 import java.awt.Color;
@@ -15,8 +16,10 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 
 import com.google.gson.Gson;
+import tech.fastj.gj.gameobjects.KeyCircle;
 import tech.fastj.gj.gameobjects.MusicNote;
 import tech.fastj.gj.rhythm.Conductor;
 import tech.fastj.gj.rhythm.InputMatcher;
@@ -26,7 +29,7 @@ import tech.fastj.gj.ui.Notice;
 
 public class Test extends SimpleManager {
 
-    public static final float NoteSize = 25f;
+    public static final float NoteSize = 30f;
 
     @Override
     public void init(FastJCanvas canvas) {
@@ -45,7 +48,7 @@ public class Test extends SimpleManager {
         Conductor conductor = new Conductor(stackAttackInfo, this);
 
         conductor.setSpawnMusicNote((note, noteLane) -> {
-            Pointf noteStartingLocation = new Pointf((canvas.getCanvasCenter().x * 1.5f) + (noteLane * NoteSize * 2), -NoteSize / 2f);
+            Pointf noteStartingLocation = new Pointf((canvas.getCanvasCenter().x * 1.5f) + (noteLane * NoteSize * 2.5f), -NoteSize / 2f);
             MusicNote musicNote = new MusicNote(noteStartingLocation, NoteSize)
                     .setFill(DrawUtil.randomColor())
                     .setOutline(MusicNote.DefaultOutlineStroke, DrawUtil.randomColor());
@@ -55,6 +58,18 @@ public class Test extends SimpleManager {
             musicNote.addLateBehavior(musicNoteMovement, this);
             drawableManager.addGameObject(musicNote);
         });
+
+        Collection<Keys> laneKeys = conductor.musicInfo.getLaneKeys();
+        int laneKeyIncrement = 1;
+        for (Keys laneKey : laneKeys) {
+            Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x * 1.5f) + (laneKeyIncrement * NoteSize * 2.5f), canvas.getResolution().y - (NoteSize * 4f));
+            KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, NoteSize, "Tahoma")
+                    .setFill(Color.yellow)
+                    .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
+                    .setTranslation(laneStartingLocation);
+            drawableManager.addGameObject(keyCircle);
+            laneKeyIncrement++;
+        }
 
         drawableManager.addGameObject(conductor);
 
