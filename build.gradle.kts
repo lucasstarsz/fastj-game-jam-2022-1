@@ -18,3 +18,4 @@ repositories.mavenCentral()
 
 dependencies.implementation("com.github.lucasstarsz:FastJ:98b89d6e23")
 dependencies.implementation("org.slf4j:slf4j-simple:2.0.0-alpha7")
+dependencies.implementation("com.google.code.gson:gson:2.9.0")

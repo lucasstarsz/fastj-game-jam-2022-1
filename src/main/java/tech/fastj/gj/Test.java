@@ -7,16 +7,16 @@ import tech.fastj.graphics.display.FastJCanvas;
 import tech.fastj.graphics.display.RenderSettings;
 import tech.fastj.graphics.util.DrawUtil;
 
-import tech.fastj.input.keyboard.Keys;
-import tech.fastj.systems.audio.StreamedAudio;
 import tech.fastj.systems.control.SimpleManager;
 
 import java.awt.Color;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
 
+import com.google.gson.Gson;
 import tech.fastj.gj.gameobjects.MusicNote;
 import tech.fastj.gj.rhythm.Conductor;
 import tech.fastj.gj.rhythm.InputMatcher;
@@ -26,62 +26,23 @@ import tech.fastj.gj.ui.Notice;
 
 public class Test extends SimpleManager {
 
-    private static final double[] StackAttackNotes = {
-            1f, 2.5f, 4f,
-            5.5f, 7f, 8f,
-            9f, 10.5f, 12f,
-            13.5f, 15f, 16f,
-            17f, 17.5f, 18.5f, 19.5f, 20f, 20.5f,
-            21f, 21.5f, 22.5f, 24f,
-
-            29f, 30.5f, 32f,
-            33.5f, 35f, 36f,
-            37f, 38.5f,
-
-            45f, 46.5f, 48f,
-            49.5f, 51f, 52f,
-            53f, 54.5f,
-    };
-    private static final int[] StackAttackNoteLanes = {
-            2, 1, 2,
-            1, 3, 2,
-            2, 1, 2,
-            1, 3, 2,
-            1, 3, 3, 3, 2, 1,
-            1, 3, 3, 3,
-
-            2, 1, 2,
-            1, 3, 2,
-            1, 2,
-
-            2, 1, 2,
-            1, 3, 2,
-            1, 2,
-    };
-    private static final Map<Integer, Keys> StackAttackLaneKeys = Map.of(
-            1, Keys.Left,
-            2, Keys.Down,
-            3, Keys.Right
-    );
-
-    private static final double StackAttackBPM = 184.0d;
-
     public static final float NoteSize = 25f;
 
     @Override
     public void init(FastJCanvas canvas) {
         canvas.modifyRenderSettings(RenderSettings.Antialiasing.Enable);
-        Path audioPath = Path.of("audio/Stack_Attack_is_Back.wav");
-        StreamedAudio music = FastJEngine.getAudioManager().loadStreamedAudio(audioPath);
+        Path stackAttackJsonPath = Path.of("Stack Attack.json");
 
-        SongInfo stackAttackInfo = new SongInfo(
-                StackAttackBPM,
-                4,
-                StackAttackNotes,
-                StackAttackNoteLanes,
-                StackAttackLaneKeys
-        );
-        Conductor conductor = new Conductor(music, stackAttackInfo, StackAttackBPM, -1, this);
+        Gson gson = new Gson();
+        String stackAttackJson;
+        try {
+            stackAttackJson = Files.readString(stackAttackJsonPath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        SongInfo stackAttackInfo = gson.fromJson(stackAttackJson, SongInfo.class);
+        Conductor conductor = new Conductor(stackAttackInfo, this);
 
         conductor.setSpawnMusicNote((note, noteLane) -> {
             Pointf noteStartingLocation = new Pointf(canvas.getCanvasCenter().x + (noteLane * NoteSize * 2), -NoteSize / 2f);

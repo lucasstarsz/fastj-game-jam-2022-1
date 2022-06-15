@@ -13,6 +13,7 @@ import tech.fastj.systems.control.Scene;
 import tech.fastj.systems.control.SimpleManager;
 
 import java.awt.Graphics2D;
+import java.nio.file.Path;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -31,18 +32,14 @@ public class Conductor extends GameObject implements Behavior {
     private BiConsumer<Double, Integer> spawnMusicNote;
     private final ScheduledExecutorService musicPlayer = Executors.newSingleThreadScheduledExecutor();
 
-    public Conductor(Audio musicSource, SongInfo musicInfo, double songBpm, BehaviorHandler behaviorHandler) {
-        this(musicSource, musicInfo, songBpm, 0, behaviorHandler);
-    }
-
-    public Conductor(Audio musicSource, SongInfo musicInfo, double songBpm, double firstBeatOffset, BehaviorHandler behaviorHandler) {
-        this.musicSource = musicSource;
+    public Conductor(SongInfo musicInfo, BehaviorHandler behaviorHandler) {
         this.musicInfo = musicInfo;
-        this.songBpm = songBpm;
+        this.songBpm = musicInfo.getBpm();
         this.secPerBeat = 60d / songBpm;
-        this.firstBeatOffset = firstBeatOffset;
+        this.firstBeatOffset = musicInfo.getFirstBeatOffset();
         setCollisionPath(DrawUtil.createPath(DrawUtil.createBox(Pointf.origin(), 0f)));
         addBehavior(this, behaviorHandler);
+        this.musicSource = FastJEngine.getAudioManager().loadStreamedAudio(Path.of(musicInfo.getMusicPath()));
     }
 
     public void setSpawnMusicNote(BiConsumer<Double, Integer> spawnMusicNote) {

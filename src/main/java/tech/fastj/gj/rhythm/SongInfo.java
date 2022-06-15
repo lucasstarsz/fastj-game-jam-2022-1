@@ -10,24 +10,39 @@ import java.util.Map;
 
 public class SongInfo {
 
-    private final double bpm;
-    private final double[] notes;
-    private final int[] noteLanes;
-    private final Map<Integer, Keys> laneKeys;
+    private double bpm;
+    private double[] notes;
+    private int[] noteLanes;
+    private Map<Integer, Keys> laneKeys;
     int nextIndex;
-    private final int beatPeekCount;
+    private int beatPeekCount;
+    private double firstBeatOffset;
+    private String musicPath;
 
-    public SongInfo(double bpm, int beatPeekCount, double[] notes, int[] noteLanes, Map<Integer, Keys> laneKeys) {
+    public SongInfo() {
+    }
+
+    public SongInfo(double bpm, int beatPeekCount, double firstBeatOffset, double[] notes, int[] noteLanes, Map<Integer, Keys> laneKeys, String musicPath) {
         this.bpm = bpm;
         this.notes = notes;
         this.noteLanes = noteLanes;
         this.laneKeys = laneKeys;
+        this.musicPath = musicPath;
         this.nextIndex = 0;
         this.beatPeekCount = beatPeekCount;
+        this.firstBeatOffset = firstBeatOffset;
+    }
+
+    public String getMusicPath() {
+        return musicPath;
     }
 
     public double getBpm() {
         return bpm;
+    }
+
+    public double getFirstBeatOffset() {
+        return firstBeatOffset;
     }
 
     public double getNote(int index) {
