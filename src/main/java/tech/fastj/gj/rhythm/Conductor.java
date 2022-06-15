@@ -113,7 +113,7 @@ public class Conductor extends GameObject implements Behavior {
             double note = musicInfo.getNote(musicInfo.nextIndex);
             spawnMusicNote.accept(note);
 
-            FastJEngine.log("added new music note at beat {}", note);
+            FastJEngine.log("added new music note {} at beat {}", note, songPositionInBeats);
             musicInfo.nextIndex++;
         }
     }
