@@ -29,18 +29,20 @@ public class Conductor extends GameObject implements Behavior {
     public double firstBeatOffset;
     public double dspSongTime;
     public Audio musicSource;
-    public SongInfo musicInfo;
+    public GeneralSongInfo musicInfo;
     private BiConsumer<Double, Integer> spawnMusicNote;
     private boolean isFinished;
     private boolean isPaused;
+    private boolean hasStarted;
     private double pauseTimeOffset;
     private final ScheduledExecutorService musicPlayer = Executors.newSingleThreadScheduledExecutor();
 
-    public Conductor(SongInfo musicInfo, BehaviorHandler behaviorHandler, boolean needsLateUpdate) {
+    public Conductor(GeneralSongInfo musicInfo, BehaviorHandler behaviorHandler, boolean needsLateUpdate) {
         this.musicInfo = musicInfo;
         this.songBpm = musicInfo.getBpm();
         this.secPerBeat = 60d / songBpm;
         this.firstBeatOffset = musicInfo.getFirstBeatOffset();
+        this.hasStarted = false;
         setCollisionPath(DrawUtil.createPath(DrawUtil.createBox(Pointf.origin(), 0f)));
 
         this.musicSource = FastJEngine.getAudioManager().loadStreamedAudio(Path.of(musicInfo.getMusicPath()));
@@ -120,7 +122,14 @@ public class Conductor extends GameObject implements Behavior {
 
         double songDelay = 60d / musicInfo.getBpm() * musicInfo.getBeatPeekCount() * 1_000_000_000d;
         dspSongTime = (System.nanoTime() + songDelay) / 1_000_000_000d;
-        musicPlayer.schedule(musicSource::play, (long) songDelay, TimeUnit.NANOSECONDS);
+        musicPlayer.schedule(() -> {
+                    System.out.println(musicInfo.getNotesLength());
+                    musicSource.play();
+                    hasStarted = true;
+                },
+                (long) songDelay,
+                TimeUnit.NANOSECONDS
+        );
     }
 
     @Override
@@ -129,8 +138,8 @@ public class Conductor extends GameObject implements Behavior {
 
     @Override
     public void update(GameObject gameObject) {
-        if (!isFinished && musicInfo.nextIndex >= musicInfo.getNotesLength() && musicSource.getCurrentPlaybackState() == PlaybackState.Stopped) {
-            FastJEngine.log("end?????????????????????????");
+        if (hasStarted && !isFinished && musicInfo.getNextIndex() >= musicInfo.getNotesLength() && musicSource.getCurrentPlaybackState() == PlaybackState.Stopped) {
+            FastJEngine.log("early ending");
             isFinished = true;
             ConductorFinishedEvent event = new ConductorFinishedEvent(musicInfo.getNotesLength());
             FastJEngine.runAfterRender(() -> FastJEngine.getGameLoop().fireEvent(event));
@@ -144,17 +153,19 @@ public class Conductor extends GameObject implements Behavior {
         songPosition = (System.nanoTime() / 1_000_000_000d) - dspSongTime - (firstBeatOffset * secPerBeat) - pauseTimeOffset;
         songPositionInBeats = songPosition / secPerBeat;
 
-        if (musicInfo.nextIndex < musicInfo.getNotesLength() && musicInfo.getNote(musicInfo.nextIndex) < songPositionInBeats + musicInfo.getBeatPeekCount()) {
-            double note = musicInfo.getNote(musicInfo.nextIndex);
-            int noteLane = musicInfo.getNoteLane(musicInfo.nextIndex);
+        if (musicInfo.getNextIndex() < musicInfo.getNotesLength() && musicInfo.getNote(musicInfo.getNextIndex()) < songPositionInBeats + musicInfo.getBeatPeekCount()) {
+            double note = musicInfo.getNote(musicInfo.getNextIndex());
+            int noteLane = musicInfo.getNoteLane(musicInfo.getNextIndex());
             spawnMusicNote.accept(note, noteLane);
 
             FastJEngine.log("added new music note {} at beat {}", note, songPositionInBeats);
-            musicInfo.nextIndex++;
-        } else if (!isFinished && musicInfo.nextIndex >= musicInfo.getNotesLength() && musicSource.getCurrentPlaybackState() == PlaybackState.Stopped) {
+            musicInfo.incrementNextIndex();
+        } else if (hasStarted && !isFinished && musicInfo.getNextIndex() >= musicInfo.getNotesLength() && musicSource.getCurrentPlaybackState() == PlaybackState.Stopped) {
             isFinished = true;
             ConductorFinishedEvent event = new ConductorFinishedEvent(musicInfo.getNotesLength());
             FastJEngine.runAfterRender(() -> FastJEngine.getGameLoop().fireEvent(event));
+        } else {
+            FastJEngine.log("{}, {}, {}, {}, {}", musicInfo.getNextIndex(), musicInfo.getNotesLength(), songPositionInBeats);
         }
     }
 }

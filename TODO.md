@@ -1,7 +1,15 @@
 - [x] one input per music note
 - [x] multiple music note lanes
 - [x] loading music & notes via file
-    - [ ] music note generation tool
+    - [x] music note generation tool
+- [x] scene-based
+    - [x] main menu
+    - [ ] song choosing
+    - [x] game w/ replayability
+        - [x] pause menu
+        - [x] results menu
+    - [x] settings
+    - [x] info & credits
 - [ ] music
     - [ ] easy jazz rhythm
     - [ ] medium jazz rhythm

@@ -27,6 +27,7 @@ public class MainMenu extends Scene {
     private Text2D titleText;
     private Button playButton;
     private Button infoButton;
+    private Button songEditorButton;
     private Button settingsButton;
     private Button exitButton;
     private MemoryAudio mainMenuMusic;
@@ -64,7 +65,16 @@ public class MainMenu extends Scene {
             FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.Information, false));
         });
 
-        settingsButton = new Button(this, Pointf.subtract(center, 225f, -50f), Shapes.ButtonSize);
+        songEditorButton = new Button(this, Pointf.subtract(center, 225f, -50f), Shapes.ButtonSize);
+        songEditorButton.setText("Song Editor");
+        songEditorButton.setFill(Color.white);
+        songEditorButton.setFont(Fonts.ButtonTextFont);
+        songEditorButton.setOnAction(mouseButtonEvent -> {
+            mouseButtonEvent.consume();
+            FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.SongEditor));
+        });
+
+        settingsButton = new Button(this, Pointf.subtract(center, -25f, -50f), Shapes.ButtonSize);
         settingsButton.setText("Settings");
         settingsButton.setFill(Color.white);
         settingsButton.setFont(Fonts.ButtonTextFont);
@@ -73,7 +83,7 @@ public class MainMenu extends Scene {
             FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.Settings, false));
         });
 
-        exitButton = new Button(this, Pointf.subtract(center, -25f, -50f), Shapes.ButtonSize);
+        exitButton = new Button(this, Pointf.subtract(center, 100f, -150f), Shapes.ButtonSize);
         exitButton.setText("Quit Game");
         exitButton.setFill(Color.white);
         exitButton.setFont(Fonts.ButtonTextFont);

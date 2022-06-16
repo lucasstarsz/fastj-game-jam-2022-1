@@ -11,14 +11,14 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public record InputMatcher(Set<Double> consumedNotes, Conductor conductor,
-                           Consumer<String> onSpawnNotice) implements KeyboardActionListener {
+public record GameInputMatcher(Set<Double> consumedNotes, Conductor conductor, SongInfo songInfo,
+                               Consumer<String> onSpawnNotice) implements KeyboardActionListener {
 
     private static final double MaxNoteDistance = 0.25d;
     private static final double PerfectNoteDistance = 0.125d;
 
-    public InputMatcher(Conductor conductor, Consumer<String> onSpawnNotice) {
-        this(new HashSet<>(), conductor, onSpawnNotice);
+    public GameInputMatcher(Conductor conductor, SongInfo songInfo, Consumer<String> onSpawnNotice) {
+        this(new HashSet<>(), conductor, songInfo, onSpawnNotice);
     }
 
     @Override
@@ -27,7 +27,7 @@ public record InputMatcher(Set<Double> consumedNotes, Conductor conductor,
             return;
         }
 
-        if (conductor.musicInfo.getLaneKeys().contains(keyboardStateEvent.getKey())) {
+        if (songInfo.getLaneKeys().contains(keyboardStateEvent.getKey())) {
             double inputBeatPosition = (((keyboardStateEvent.getTimestamp() / 1_000_000_000d) - conductor.dspSongTime) / conductor.secPerBeat) - conductor.firstBeatOffset;
             FastJEngine.trace("{} arrow key pressed at {}", keyboardStateEvent.getKey(), inputBeatPosition);
             checkNotes(inputBeatPosition, keyboardStateEvent.getKey());
@@ -35,17 +35,17 @@ public record InputMatcher(Set<Double> consumedNotes, Conductor conductor,
     }
 
     private void checkNotes(double inputBeatPosition, Keys inputKey) {
-        if (inputBeatPosition > conductor.musicInfo.getNote(conductor.musicInfo.getNotesLength() - 1) + MaxNoteDistance) {
+        if (inputBeatPosition > songInfo.getNote(songInfo.getNotesLength() - 1) + MaxNoteDistance) {
             FastJEngine.log("extra note at {}", inputBeatPosition);
             return;
         }
 
-        int nextIndex = conductor.musicInfo.findIndex(inputBeatPosition, MaxNoteDistance);
+        int nextIndex = songInfo.findIndex(inputBeatPosition, MaxNoteDistance);
 
-        boolean hasNext = nextIndex != -1 && inputKey == conductor.musicInfo.getLaneKey(conductor.musicInfo.getNoteLane(nextIndex));
+        boolean hasNext = nextIndex != -1 && inputKey == songInfo.getLaneKey(songInfo.getNoteLane(nextIndex));
         double nextNote = 0;
         if (hasNext) {
-            nextNote = conductor.musicInfo.getNote(nextIndex);
+            nextNote = songInfo.getNote(nextIndex);
             FastJEngine.trace("has next on {}", nextNote);
         }
         double nextNoteDistance = 0;
@@ -53,10 +53,10 @@ public record InputMatcher(Set<Double> consumedNotes, Conductor conductor,
             nextNoteDistance = Math.abs(nextNote - inputBeatPosition);
         }
 
-        boolean hasPrevious = nextIndex - 1 >= 0 && inputKey == conductor.musicInfo.getLaneKey(conductor.musicInfo.getNoteLane(nextIndex - 1));
+        boolean hasPrevious = nextIndex - 1 >= 0 && inputKey == songInfo.getLaneKey(songInfo.getNoteLane(nextIndex - 1));
         double previousNote = 0;
         if (hasPrevious) {
-            previousNote = conductor.musicInfo.getNote(nextIndex - 1);
+            previousNote = songInfo.getNote(nextIndex - 1);
             FastJEngine.trace("has previous on {}", previousNote);
         }
         double lastNoteDistance = 0;

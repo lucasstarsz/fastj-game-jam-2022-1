@@ -1,35 +1,32 @@
 package tech.fastj.gj.rhythm;
 
-import tech.fastj.engine.FastJEngine;
-
 import tech.fastj.input.keyboard.Keys;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 
-public class SongInfo implements GeneralSongInfo {
+public class EditableSongInfo implements GeneralSongInfo {
 
-    private String songName;
-    private double bpm;
-    private double[] notes;
-    private int[] noteLanes;
-    private TreeMap<Integer, Keys> laneKeys;
+    public String songName;
+    public double bpm;
+    public double[] notes;
+    public int[] noteLanes;
+    public TreeMap<Integer, Keys> laneKeys;
     int nextIndex;
-    private int beatPeekCount;
-    private double firstBeatOffset;
-    private String musicPath;
+    public int beatPeekCount;
+    public double firstBeatOffset;
+    public String musicPath;
 
-    public SongInfo() {
+    public EditableSongInfo() {
     }
 
-    public SongInfo(String songName, double bpm, int beatPeekCount, double firstBeatOffset, double[] notes, int[] noteLanes, TreeMap<Integer, Keys> laneKeys, String musicPath) {
+    public EditableSongInfo(String songName, double bpm, int beatPeekCount, double firstBeatOffset, TreeMap<Integer, Keys> laneKeys, String musicPath) {
         this.songName = songName;
         this.bpm = bpm;
-        this.notes = notes;
-        this.noteLanes = noteLanes;
         this.laneKeys = laneKeys;
         this.musicPath = musicPath;
         this.nextIndex = 0;
@@ -42,38 +39,57 @@ public class SongInfo implements GeneralSongInfo {
         return songName;
     }
 
+    @Override
     public String getMusicPath() {
         return musicPath;
     }
 
+    @Override
     public double getBpm() {
         return bpm;
     }
 
+    @Override
     public double getFirstBeatOffset() {
         return firstBeatOffset;
     }
 
+    @Override
     public double getNote(int index) {
         return notes[index];
     }
 
+    @Override
     public int getNoteLane(int index) {
         return noteLanes[index];
     }
 
+    @Override
     public Collection<Keys> getLaneKeys() {
         return Collections.unmodifiableCollection(laneKeys.values());
     }
 
+    @Override
     public Keys getLaneKey(int lane) {
         return laneKeys.get(lane);
     }
 
-    public int getNotesLength() {
-        return notes.length;
+    public int getKeyLane(Keys key) {
+        for (Map.Entry<Integer, Keys> entry : laneKeys.entrySet()) {
+            if (entry.getValue() == key) {
+                return entry.getKey();
+            }
+        }
+
+        throw new IllegalStateException("No key lane found for key " + key);
     }
 
+    @Override
+    public int getNotesLength() {
+        return notes == null ? 0 : notes.length;
+    }
+
+    @Override
     public int getBeatPeekCount() {
         return beatPeekCount;
     }
@@ -88,21 +104,6 @@ public class SongInfo implements GeneralSongInfo {
         nextIndex++;
     }
 
-    public int findIndex(double beat, double maxBeatDistance) {
-        if (beat + maxBeatDistance >= notes[notes.length - 1]) {
-            return -1;
-        }
-
-        for (int i = 0; i < notes.length; i++) {
-            if (beat <= notes[i]) {
-                FastJEngine.log("{} <= {}", beat, notes[i]);
-                return i;
-            }
-        }
-
-        return notes.length - 1;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -111,14 +112,14 @@ public class SongInfo implements GeneralSongInfo {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        SongInfo songInfo = (SongInfo) o;
-        return Double.compare(songInfo.bpm, bpm) == 0
-                && beatPeekCount == songInfo.beatPeekCount
-                && Double.compare(songInfo.firstBeatOffset, firstBeatOffset) == 0
-                && Arrays.equals(notes, songInfo.notes)
-                && Arrays.equals(noteLanes, songInfo.noteLanes)
-                && Objects.equals(laneKeys, songInfo.laneKeys)
-                && Objects.equals(musicPath, songInfo.musicPath);
+        EditableSongInfo editableSongInfo = (EditableSongInfo) o;
+        return Double.compare(editableSongInfo.bpm, bpm) == 0
+                && beatPeekCount == editableSongInfo.beatPeekCount
+                && Double.compare(editableSongInfo.firstBeatOffset, firstBeatOffset) == 0
+                && Arrays.equals(notes, editableSongInfo.notes)
+                && Arrays.equals(noteLanes, editableSongInfo.noteLanes)
+                && Objects.equals(laneKeys, editableSongInfo.laneKeys)
+                && Objects.equals(musicPath, editableSongInfo.musicPath);
     }
 
     @Override
@@ -131,7 +132,7 @@ public class SongInfo implements GeneralSongInfo {
 
     @Override
     public String toString() {
-        return "SongInfo{" +
+        return "EditableSongInfo{" +
                 "bpm=" + bpm +
                 ", beatPeekCount=" + beatPeekCount +
                 ", firstBeatOffset=" + firstBeatOffset +
@@ -141,5 +142,9 @@ public class SongInfo implements GeneralSongInfo {
                 ", noteLanes=" + Arrays.toString(noteLanes) +
                 ", laneKeys=" + laneKeys +
                 '}';
+    }
+
+    public void resetNextIndex() {
+        nextIndex = 0;
     }
 }

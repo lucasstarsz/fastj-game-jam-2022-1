@@ -21,7 +21,7 @@ import tech.fastj.gj.gameobjects.KeyCircle;
 import tech.fastj.gj.gameobjects.MusicNote;
 import tech.fastj.gj.rhythm.Conductor;
 import tech.fastj.gj.rhythm.ConductorFinishedEvent;
-import tech.fastj.gj.rhythm.InputMatcher;
+import tech.fastj.gj.rhythm.GameInputMatcher;
 import tech.fastj.gj.rhythm.SongInfo;
 import tech.fastj.gj.scripts.MusicNoteMovement;
 import tech.fastj.gj.ui.ContentBox;
@@ -38,10 +38,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
     private User user;
     private Conductor conductor;
 
-    private ContentBox scoreBox;
-    private ContentBox highScoreBox;
-    private ContentBox blocksStackedBox;
-    private ContentBox highestBlocksStackedBox;
+    private ContentBox songNameBox;
 
     private PauseMenu pauseMenu;
     private KeyboardActionListener pauseListener;
@@ -63,7 +60,6 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
 
     @Override
     public void load(FastJCanvas canvas) {
-        System.out.println("begin");
         Log.debug(MainGame.class, "loading {}", getSceneName());
         changeState(GameState.Intro);
         Log.debug(MainGame.class, "loaded {}", getSceneName());
@@ -86,24 +82,9 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
             conductor = null;
         }
 
-        if (scoreBox != null) {
-            scoreBox.destroy(this);
-            scoreBox = null;
-        }
-
-        if (highScoreBox != null) {
-            highScoreBox.destroy(this);
-            highScoreBox = null;
-        }
-
-        if (blocksStackedBox != null) {
-            blocksStackedBox.destroy(this);
-            blocksStackedBox = null;
-        }
-
-        if (highestBlocksStackedBox != null) {
-            highestBlocksStackedBox.destroy(this);
-            highestBlocksStackedBox = null;
+        if (songNameBox != null) {
+            songNameBox.destroy(this);
+            songNameBox = null;
         }
 
         if (pauseMenu != null) {
@@ -139,17 +120,8 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
             case Intro -> {
                 if (gameState == GameState.Results) {
 
-                    scoreBox.destroy(this);
-                    scoreBox = null;
-
-                    highScoreBox.destroy(this);
-                    scoreBox = null;
-
-                    blocksStackedBox.destroy(this);
-                    scoreBox = null;
-
-                    highestBlocksStackedBox.destroy(this);
-                    scoreBox = null;
+                    songNameBox.destroy(this);
+                    songNameBox = null;
 
                     user.resetScore();
                     user = null;
@@ -165,25 +137,10 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                 if (gameState == GameState.Intro) {
                     user = User.getInstance();
 
-                    scoreBox = new ContentBox(this, "Score", "" + user.getScore());
-                    scoreBox.setTranslation(new Pointf(30f));
-                    scoreBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
-                    drawableManager.addUIElement(scoreBox);
-
-                    highScoreBox = new ContentBox(this, "High Score", "" + user.getHighScore());
-                    highScoreBox.setTranslation(new Pointf(30f, 50f));
-                    highScoreBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
-                    drawableManager.addUIElement(highScoreBox);
-
-                    blocksStackedBox = new ContentBox(this, "Blocks Stacked", "" + user.getNumberStacked());
-                    blocksStackedBox.setTranslation(new Pointf(30f, 70f));
-                    blocksStackedBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
-                    drawableManager.addUIElement(blocksStackedBox);
-
-                    highestBlocksStackedBox = new ContentBox(this, "Highest Number Stacked", "" + user.getHighestNumberStacked());
-                    highestBlocksStackedBox.setTranslation(new Pointf(30f, 90f));
-                    highestBlocksStackedBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
-                    drawableManager.addUIElement(highestBlocksStackedBox);
+                    songNameBox = new ContentBox(this, "Now Playing", "" + conductor.musicInfo.getSongName());
+                    songNameBox.setTranslation(new Pointf(30f));
+                    songNameBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
+                    drawableManager.addUIElement(songNameBox);
 
                     Gson gson = new Gson();
                     String stackAttackJson;
@@ -223,8 +180,9 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
 
                     drawableManager.addGameObject(conductor);
 
-                    InputMatcher matcher = new InputMatcher(
+                    GameInputMatcher matcher = new GameInputMatcher(
                             conductor,
+                            stackAttackInfo,
                             message -> {
                                 Notice notice = new Notice(message, Color.black, new Pointf(100f, 50f), this);
                                 drawableManager.addGameObject(notice);

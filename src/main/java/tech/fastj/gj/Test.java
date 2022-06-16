@@ -23,7 +23,7 @@ import tech.fastj.gj.gameobjects.KeyCircle;
 import tech.fastj.gj.gameobjects.MusicNote;
 import tech.fastj.gj.rhythm.Conductor;
 import tech.fastj.gj.rhythm.ConductorFinishedEvent;
-import tech.fastj.gj.rhythm.InputMatcher;
+import tech.fastj.gj.rhythm.GameInputMatcher;
 import tech.fastj.gj.rhythm.SongInfo;
 import tech.fastj.gj.scenes.game.ResultMenu;
 import tech.fastj.gj.scripts.MusicNoteMovement;
@@ -74,8 +74,9 @@ public class Test extends SimpleManager implements GameEventObserver<ConductorFi
 
         drawableManager.addGameObject(conductor);
 
-        InputMatcher matcher = new InputMatcher(
+        GameInputMatcher matcher = new GameInputMatcher(
                 conductor,
+                stackAttackInfo,
                 message -> {
                     Notice notice = new Notice(message, Color.black, new Pointf(100f, 50f), this);
                     drawableManager.addGameObject(notice);
