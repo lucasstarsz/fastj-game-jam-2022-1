@@ -13,7 +13,9 @@ import tech.fastj.systems.control.Scene;
 import java.awt.Color;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import com.google.gson.Gson;
 import tech.fastj.gameloop.event.GameEventObserver;
@@ -45,6 +47,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
     private boolean allowClicks;
 
     private ResultMenu resultMenu;
+    private List<KeyCircle> keyCircles;
 
     public MainGame() {
         super(SceneNames.Game);
@@ -85,6 +88,14 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
         if (songNameBox != null) {
             songNameBox.destroy(this);
             songNameBox = null;
+        }
+
+        if (keyCircles != null) {
+            for (KeyCircle keyCircle : keyCircles) {
+                keyCircle.destroy(this);
+            }
+            keyCircles.clear();
+            keyCircles = null;
         }
 
         if (pauseMenu != null) {
@@ -137,11 +148,6 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                 if (gameState == GameState.Intro) {
                     user = User.getInstance();
 
-                    songNameBox = new ContentBox(this, "Now Playing", "" + conductor.musicInfo.getSongName());
-                    songNameBox.setTranslation(new Pointf(30f));
-                    songNameBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
-                    drawableManager.addUIElement(songNameBox);
-
                     Gson gson = new Gson();
                     String stackAttackJson;
                     try {
@@ -166,21 +172,28 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                         drawableManager.addGameObject(musicNote);
                     });
 
+                    songNameBox = new ContentBox(this, "Now Playing", "" + conductor.musicInfo.getSongName());
+                    songNameBox.setTranslation(new Pointf(30f));
+                    songNameBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
+                    drawableManager.addUIElement(songNameBox);
+
                     Collection<Keys> laneKeys = conductor.musicInfo.getLaneKeys();
                     int laneKeyIncrement = 1;
+                    keyCircles = new ArrayList<>();
                     for (Keys laneKey : laneKeys) {
                         Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x * 1.5f) + (laneKeyIncrement * Shapes.NoteSize * 2.5f), canvas.getResolution().y - (Shapes.NoteSize * 4f));
-                        KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma")
+                        KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma", this)
                                 .setFill(Color.yellow)
                                 .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
                                 .setTranslation(laneStartingLocation);
+                        keyCircles.add(keyCircle);
                         drawableManager.addGameObject(keyCircle);
                         laneKeyIncrement++;
                     }
 
                     drawableManager.addGameObject(conductor);
 
-                    GameInputMatcher matcher = new GameInputMatcher(
+                    GameInputMatcher inputMatcher = new GameInputMatcher(
                             conductor,
                             stackAttackInfo,
                             message -> {
@@ -188,7 +201,15 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                                 drawableManager.addGameObject(notice);
                             }
                     );
-                    inputManager.addKeyboardActionListener(matcher);
+                    inputManager.addKeyboardActionListener(inputMatcher);
+                    inputMatcher.setOnLaneKeyPressed(event -> {
+                        for (KeyCircle keyCircle : keyCircles) {
+                            if (keyCircle.getKey() == event.getKey()) {
+                                keyCircle.setFill(Color.white, false);
+                                return;
+                            }
+                        }
+                    });
                     FastJEngine.getGameLoop().addEventObserver(this, ConductorFinishedEvent.class);
                 } else if (gameState == GameState.Paused) {
                     pauseMenu.setShouldRender(false);
@@ -206,7 +227,17 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                 inputManager.removeKeyboardActionListener(pauseListener);
                 conductor.setPaused(true);
             }
-            case Results -> conductor.setPaused(true);
+            case Results -> {
+                if (keyCircles != null) {
+                    for (KeyCircle keyCircle : keyCircles) {
+                        keyCircle.destroy(this);
+                    }
+                    keyCircles.clear();
+                    keyCircles = null;
+                }
+
+                conductor.setPaused(true);
+            }
         }
         gameState = next;
     }

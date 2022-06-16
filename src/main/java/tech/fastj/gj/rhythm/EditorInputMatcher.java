@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 public final class EditorInputMatcher implements KeyboardActionListener {
 
@@ -21,6 +22,7 @@ public final class EditorInputMatcher implements KeyboardActionListener {
     private final Conductor conductor;
     private final EditableSongInfo songInfo;
     private final List<Pair<Double, Integer>> recordedNotes;
+    private BiConsumer<KeyboardStateEvent, Double> onLaneKeyPressed;
 
     public EditorInputMatcher(Conductor conductor, EditableSongInfo songInfo) {
         this.consumedNotes = new HashSet<>();
@@ -29,20 +31,29 @@ public final class EditorInputMatcher implements KeyboardActionListener {
         this.songInfo = songInfo;
     }
 
+    public void setOnLaneKeyPressed(BiConsumer<KeyboardStateEvent, Double> onLaneKeyPressed) {
+        this.onLaneKeyPressed = onLaneKeyPressed;
+    }
+
     @Override
     public void onKeyRecentlyPressed(KeyboardStateEvent keyboardStateEvent) {
         if (conductor.musicSource.getCurrentPlaybackState() != PlaybackState.Playing) {
             return;
         }
 
+        double outputBeatPosition = -1;
         if (songInfo.getLaneKeys().contains(keyboardStateEvent.getKey())) {
             double inputBeatPosition = (((keyboardStateEvent.getTimestamp() / 1_000_000_000d) - conductor.dspSongTime) / conductor.secPerBeat) - conductor.firstBeatOffset;
             FastJEngine.trace("{} key pressed at {}", keyboardStateEvent.getKey(), inputBeatPosition);
-            checkNotes(inputBeatPosition, keyboardStateEvent.getKey());
+            outputBeatPosition = checkNotes(inputBeatPosition, keyboardStateEvent.getKey());
+        }
+
+        if (onLaneKeyPressed != null) {
+            onLaneKeyPressed.accept(keyboardStateEvent, outputBeatPosition);
         }
     }
 
-    private void checkNotes(double inputBeatPosition, Keys inputKey) {
+    private double checkNotes(double inputBeatPosition, Keys inputKey) {
         int cutBeatPosition = (int) inputBeatPosition;
 
         double adjustedBeatPosition;
@@ -57,11 +68,13 @@ public final class EditorInputMatcher implements KeyboardActionListener {
         }
 
         if (consumedNotes.contains(adjustedBeatPosition)) {
-            return;
+            return -1;
         }
 
         consumedNotes.add(adjustedBeatPosition);
         recordedNotes.add(Pair.of(adjustedBeatPosition, songInfo.getKeyLane(inputKey)));
+
+        return adjustedBeatPosition;
     }
 
     public List<Pair<Double, Integer>> getRecordedNotes() {
@@ -94,5 +107,4 @@ public final class EditorInputMatcher implements KeyboardActionListener {
                 "conductor=" + conductor + ", " +
                 "songInfo=" + songInfo + ']';
     }
-
 }

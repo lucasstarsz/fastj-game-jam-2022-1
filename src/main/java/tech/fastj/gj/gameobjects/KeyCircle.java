@@ -1,11 +1,17 @@
 package tech.fastj.gj.gameobjects;
 
+import tech.fastj.engine.FastJEngine;
+import tech.fastj.math.Maths;
 import tech.fastj.math.Point;
 import tech.fastj.math.Pointf;
 import tech.fastj.graphics.game.GameObject;
 import tech.fastj.graphics.util.DrawUtil;
 
+import tech.fastj.input.keyboard.KeyboardActionListener;
 import tech.fastj.input.keyboard.Keys;
+import tech.fastj.input.keyboard.events.KeyboardStateEvent;
+import tech.fastj.systems.behaviors.Behavior;
+import tech.fastj.systems.behaviors.BehaviorHandler;
 import tech.fastj.systems.collections.Pair;
 import tech.fastj.systems.control.Scene;
 import tech.fastj.systems.control.SimpleManager;
@@ -19,7 +25,7 @@ import java.awt.Paint;
 import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 
-public class KeyCircle extends GameObject {
+public class KeyCircle extends GameObject implements KeyboardActionListener, Behavior {
 
     /** {@link Color} representing the default color value of {@code (0, 0, 0)}. */
     public static final Color DefaultFill = Color.black;
@@ -33,16 +39,20 @@ public class KeyCircle extends GameObject {
     private final Keys key;
     private Color fillColor;
     private Color outlineColor;
+    private Color baseColor;
+    private float deltaTimeBuildup;
     private BasicStroke outlineStroke;
     private final Font font;
 
-    public KeyCircle(Keys key, float radius, String fontName) {
+    public KeyCircle(Keys key, float radius, String fontName, BehaviorHandler handler) {
         Pair<Pointf[], Point[]> circleMesh = DrawUtil.createCircle(0f, radius, radius);
         setCollisionPath(DrawUtil.createPath(circleMesh.getLeft(), circleMesh.getRight()));
 
         this.key = key;
         this.font = new Font(fontName, Font.BOLD, 12);
         setFill(DefaultFill);
+
+        addLateBehavior(this, handler);
     }
 
     /**
@@ -52,7 +62,22 @@ public class KeyCircle extends GameObject {
      * @return The {@code KeyCircle} instance, for method chaining.
      */
     public KeyCircle setFill(Color newColor) {
+        return setFill(newColor, true);
+    }
+
+    /**
+     * Sets the {@code KeyCircle}'s {@code Color}.
+     *
+     * @param newColor The new {@code Color} value.
+     * @return The {@code KeyCircle} instance, for method chaining.
+     */
+    public KeyCircle setFill(Color newColor, boolean changeBase) {
         fillColor = newColor;
+        if (changeBase) {
+            baseColor = new Color(fillColor.getRed(), fillColor.getGreen(), fillColor.getBlue(), fillColor.getAlpha());
+        } else {
+            deltaTimeBuildup = 0f;
+        }
         return this;
     }
 
@@ -118,6 +143,33 @@ public class KeyCircle extends GameObject {
         return outlineStroke;
     }
 
+    public Keys getKey() {
+        return key;
+    }
+
+    @Override
+    public void onKeyRecentlyPressed(KeyboardStateEvent keyboardStateEvent) {
+        if (keyboardStateEvent.getKey() == key) {
+            fillColor = Color.white;
+        }
+    }
+
+    @Override
+    public void init(GameObject gameObject) {
+    }
+
+    @Override
+    public void fixedUpdate(GameObject gameObject) {
+    }
+
+    @Override
+    public void update(GameObject gameObject) {
+        if (!fillColor.equals(baseColor)) {
+            deltaTimeBuildup = Maths.withinRange(deltaTimeBuildup + (FastJEngine.getDeltaTime() / 10f), 0f, 1f);
+            fillColor = DrawUtil.colorLerp(fillColor, baseColor, deltaTimeBuildup);
+        }
+    }
+
     @Override
     public void render(Graphics2D g) {
         AffineTransform oldTransform = (AffineTransform) g.getTransform().clone();
@@ -151,6 +203,7 @@ public class KeyCircle extends GameObject {
         fillColor = DefaultFill;
         outlineColor = DefaultOutlineColor;
         outlineStroke = DefaultOutlineStroke;
+        origin.inputManager.removeKeyboardActionListener(this);
         super.destroyTheRest(origin);
     }
 
@@ -159,6 +212,7 @@ public class KeyCircle extends GameObject {
         fillColor = DefaultFill;
         outlineColor = DefaultOutlineColor;
         outlineStroke = DefaultOutlineStroke;
+        origin.inputManager.removeKeyboardActionListener(this);
         super.destroyTheRest(origin);
     }
 }

@@ -8,17 +8,26 @@ import tech.fastj.input.keyboard.events.KeyboardStateEvent;
 import tech.fastj.systems.audio.state.PlaybackState;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public record GameInputMatcher(Set<Double> consumedNotes, Conductor conductor, SongInfo songInfo,
-                               Consumer<String> onSpawnNotice) implements KeyboardActionListener {
+public final class GameInputMatcher implements KeyboardActionListener {
 
     private static final double MaxNoteDistance = 0.25d;
     private static final double PerfectNoteDistance = 0.125d;
+    private final Set<Double> consumedNotes;
+    private final Conductor conductor;
+    private final SongInfo songInfo;
+    private final Consumer<String> onSpawnNotice;
+
+    private Consumer<KeyboardStateEvent> onLaneKeyPressed;
 
     public GameInputMatcher(Conductor conductor, SongInfo songInfo, Consumer<String> onSpawnNotice) {
-        this(new HashSet<>(), conductor, songInfo, onSpawnNotice);
+        this.consumedNotes = new HashSet<>();
+        this.conductor = conductor;
+        this.songInfo = songInfo;
+        this.onSpawnNotice = onSpawnNotice;
     }
 
     @Override
@@ -31,6 +40,10 @@ public record GameInputMatcher(Set<Double> consumedNotes, Conductor conductor, S
             double inputBeatPosition = (((keyboardStateEvent.getTimestamp() / 1_000_000_000d) - conductor.dspSongTime) / conductor.secPerBeat) - conductor.firstBeatOffset;
             FastJEngine.trace("{} arrow key pressed at {}", keyboardStateEvent.getKey(), inputBeatPosition);
             checkNotes(inputBeatPosition, keyboardStateEvent.getKey());
+        }
+
+        if (onLaneKeyPressed != null) {
+            onLaneKeyPressed.accept(keyboardStateEvent);
         }
     }
 
@@ -90,4 +103,50 @@ public record GameInputMatcher(Set<Double> consumedNotes, Conductor conductor, S
             return true;
         }
     }
+
+    public void setOnLaneKeyPressed(Consumer<KeyboardStateEvent> onLaneKeyPressed) {
+        this.onLaneKeyPressed = onLaneKeyPressed;
+    }
+
+    public Set<Double> consumedNotes() {
+        return consumedNotes;
+    }
+
+    public Conductor conductor() {
+        return conductor;
+    }
+
+    public SongInfo songInfo() {
+        return songInfo;
+    }
+
+    public Consumer<String> onSpawnNotice() {
+        return onSpawnNotice;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) return true;
+        if (obj == null || obj.getClass() != this.getClass()) return false;
+        var that = (GameInputMatcher) obj;
+        return Objects.equals(this.consumedNotes, that.consumedNotes) &&
+                Objects.equals(this.conductor, that.conductor) &&
+                Objects.equals(this.songInfo, that.songInfo) &&
+                Objects.equals(this.onSpawnNotice, that.onSpawnNotice);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(consumedNotes, conductor, songInfo, onSpawnNotice);
+    }
+
+    @Override
+    public String toString() {
+        return "GameInputMatcher[" +
+                "consumedNotes=" + consumedNotes + ", " +
+                "conductor=" + conductor + ", " +
+                "songInfo=" + songInfo + ", " +
+                "onSpawnNotice=" + onSpawnNotice + ']';
+    }
+
 }

@@ -255,7 +255,7 @@ public class Notice extends GameObject implements Behavior {
             Color moreTransparentColor = new Color(fillColor.getRed(), fillColor.getGreen(), fillColor.getBlue(), fillColor.getAlpha() - 1);
             setFill(moreTransparentColor);
 
-            float yTranslation = Maths.lerp(location.y, location.y + 200f, (float) ExtraMaths.normalize(System.nanoTime(), timestamp, endTimestamp));
+            float yTranslation = Maths.lerp(location.y, location.y + 250f, (float) ExtraMaths.normalize(System.nanoTime(), timestamp, endTimestamp));
             gameObject.setTranslation(Pointf.add(location, 0f, yTranslation));
         }
     }

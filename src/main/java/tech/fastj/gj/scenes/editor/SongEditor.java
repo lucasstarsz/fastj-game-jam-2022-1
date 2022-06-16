@@ -54,6 +54,7 @@ import tech.fastj.gj.rhythm.EditorInputMatcher;
 import tech.fastj.gj.scenes.game.MainGame;
 import tech.fastj.gj.scripts.MusicNoteMovement;
 import tech.fastj.gj.ui.ContentBox;
+import tech.fastj.gj.ui.Notice;
 import tech.fastj.gj.util.Fonts;
 import tech.fastj.gj.util.SceneNames;
 import tech.fastj.gj.util.Shapes;
@@ -184,7 +185,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                 keyCircles = new ArrayList<>();
                 for (Keys laneKey : laneKeys) {
                     Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x) + (laneKeyIncrement * Shapes.NoteSize * 2.5f), canvas.getResolution().y - (Shapes.NoteSize * 4f));
-                    KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma")
+                    KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma", this)
                             .setFill(Color.yellow)
                             .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
                             .setTranslation(laneStartingLocation);
@@ -197,6 +198,19 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
 
                 inputMatcher = new EditorInputMatcher(conductor, songInfo);
                 inputManager.addKeyboardActionListener(inputMatcher);
+                inputMatcher.setOnLaneKeyPressed((event, beat) -> {
+                    for (KeyCircle keyCircle : keyCircles) {
+                        if (keyCircle.getKey() == event.getKey()) {
+                            keyCircle.setFill(Color.white, false);
+
+                            if (beat != -1) {
+                                Notice notice = new Notice("'" + event.getKey().name() + "' key at beat " + beat, Color.black, new Pointf(100f, 50f), this);
+                                drawableManager.addGameObject(notice);
+                            }
+                            return;
+                        }
+                    }
+                });
                 songInfo.resetNextIndex();
                 FastJEngine.getGameLoop().addEventObserver(this, ConductorFinishedEvent.class);
             }
@@ -234,7 +248,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                 keyCircles = new ArrayList<>();
                 for (Keys laneKey : laneKeys) {
                     Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x) + (laneKeyIncrement * Shapes.NoteSize * 2.5f), canvas.getResolution().y - (Shapes.NoteSize * 4f));
-                    KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma")
+                    KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma", this)
                             .setFill(Color.yellow)
                             .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
                             .setTranslation(laneStartingLocation);

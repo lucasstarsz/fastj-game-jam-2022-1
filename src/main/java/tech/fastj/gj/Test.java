@@ -64,7 +64,7 @@ public class Test extends SimpleManager implements GameEventObserver<ConductorFi
         int laneKeyIncrement = 1;
         for (Keys laneKey : laneKeys) {
             Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x * 1.5f) + (laneKeyIncrement * Shapes.NoteSize * 2.5f), canvas.getResolution().y - (Shapes.NoteSize * 4f));
-            KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma")
+            KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma", this)
                     .setFill(Color.yellow)
                     .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
                     .setTranslation(laneStartingLocation);

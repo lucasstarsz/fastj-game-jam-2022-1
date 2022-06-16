@@ -164,8 +164,6 @@ public class Conductor extends GameObject implements Behavior {
             isFinished = true;
             ConductorFinishedEvent event = new ConductorFinishedEvent(musicInfo.getNotesLength());
             FastJEngine.runAfterRender(() -> FastJEngine.getGameLoop().fireEvent(event));
-        } else {
-            FastJEngine.log("{}, {}, {}, {}, {}", musicInfo.getNextIndex(), musicInfo.getNotesLength(), songPositionInBeats);
         }
     }
 }
