@@ -17,7 +17,7 @@ public class FastJGameJam2022 {
         FlatDarkLaf.setup();
         FastJEngine.init(GameName, new GameManager());
         FastJEngine.setTargetUPS(1);
-        FastJEngine.configureLogging(LogLevel.Trace);
+        FastJEngine.configureLogging(LogLevel.Debug);
 
         try {
             FastJEngine.run();
