@@ -133,7 +133,6 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
         switch (next) {
             case Intro -> {
                 if (gameState == GameState.Results) {
-
                     songNameBox.destroy(this);
                     songNameBox = null;
 

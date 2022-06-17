@@ -55,6 +55,7 @@ import tech.fastj.gj.scenes.game.MainGame;
 import tech.fastj.gj.scripts.MusicNoteMovement;
 import tech.fastj.gj.ui.ContentBox;
 import tech.fastj.gj.ui.Notice;
+import tech.fastj.gj.util.Colors;
 import tech.fastj.gj.util.Fonts;
 import tech.fastj.gj.util.SceneNames;
 import tech.fastj.gj.util.Shapes;
@@ -124,7 +125,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
 
     @Override
     public void update(FastJCanvas canvas) {
-        if (editorState == EditorState.Recording) {
+        if (editorState == EditorState.Recording || editorState == EditorState.Review) {
             double inputBeatPosition = conductor.songPositionInBeats;
             int cutBeatPosition = (int) inputBeatPosition;
 
@@ -170,14 +171,16 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                 conductor = new Conductor(songInfo, this, true);
                 FastJCanvas canvas = FastJEngine.getCanvas();
 
-                songNameBox = new ContentBox(this, "Now Playing", "" + conductor.musicInfo.getSongName());
+                songNameBox = new ContentBox(this, "Now Recording", "" + conductor.musicInfo.getSongName());
                 songNameBox.setTranslation(new Pointf(30f));
                 songNameBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
+                songNameBox.getStatDisplay().setFill(Colors.Snowy);
                 drawableManager.addUIElement(songNameBox);
 
                 beatBox = new ContentBox(this, "Beat", "" + conductor.songPositionInBeats);
                 beatBox.setTranslation(new Pointf(30f, 50f));
                 beatBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
+                beatBox.getStatDisplay().setFill(Colors.Snowy);
                 drawableManager.addUIElement(beatBox);
 
                 Collection<Keys> laneKeys = conductor.musicInfo.getLaneKeys();
@@ -186,7 +189,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                 for (Keys laneKey : laneKeys) {
                     Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x) + (laneKeyIncrement * Shapes.NoteSize * 2.5f), canvas.getResolution().y - (Shapes.NoteSize * 4f));
                     KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma", this)
-                            .setFill(Color.yellow)
+                            .setFill(Color.gray)
                             .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
                             .setTranslation(laneStartingLocation);
                     keyCircles.add(keyCircle);
@@ -233,14 +236,16 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                     drawableManager.addGameObject(musicNote);
                 });
 
-                songNameBox = new ContentBox(this, "Now Playing", "" + conductor.musicInfo.getSongName());
+                songNameBox = new ContentBox(this, "Now Reviewing", "" + conductor.musicInfo.getSongName());
                 songNameBox.setTranslation(new Pointf(30f));
                 songNameBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
+                songNameBox.getStatDisplay().setFill(Colors.Snowy);
                 drawableManager.addUIElement(songNameBox);
 
                 beatBox = new ContentBox(this, "Beat", "" + conductor.songPositionInBeats);
                 beatBox.setTranslation(new Pointf(30f, 50f));
                 beatBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
+                beatBox.getStatDisplay().setFill(Colors.Snowy);
                 drawableManager.addUIElement(beatBox);
 
                 Collection<Keys> laneKeys = conductor.musicInfo.getLaneKeys();
@@ -249,7 +254,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                 for (Keys laneKey : laneKeys) {
                     Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x) + (laneKeyIncrement * Shapes.NoteSize * 2.5f), canvas.getResolution().y - (Shapes.NoteSize * 4f));
                     KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma", this)
-                            .setFill(Color.yellow)
+                            .setFill(Color.gray)
                             .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
                             .setTranslation(laneStartingLocation);
                     keyCircles.add(keyCircle);
@@ -362,7 +367,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                                 String path = browseForPath(
                                         "Choose a location to save your song info file.",
                                         FileDialog.SAVE,
-                                        songInfo.musicPath.substring(Math.max(0, songInfo.musicPath.lastIndexOf(File.separator)))
+                                        songInfo.musicPath.substring(Math.max(0, songInfo.musicPath.lastIndexOf(File.separator)), songInfo.musicPath.lastIndexOf(".wav"))
                                 );
 
                                 if (path != null) {
@@ -532,6 +537,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
             boolean returnToMainMenu = DialogUtil.showConfirmationDialog(
                     DialogConfig.create()
                             .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                            .withTitle("Exit Song Editor")
                             .withPrompt("Song info editing was cancelled. Exit?")
                             .build(),
                     DialogOptions.YesNo
@@ -608,7 +614,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
         layout.putConstraint(SpringLayout.EAST, input, 0, SpringLayout.EAST, laneKeysCombo.getRight());
 
         layout.putConstraint(SpringLayout.WEST, button, 5, SpringLayout.EAST, input);
-        layout.putConstraint(SpringLayout.NORTH, button, -3, SpringLayout.NORTH, input);
+        layout.putConstraint(SpringLayout.NORTH, button, 0, SpringLayout.NORTH, input);
 
         layout.putConstraint(SpringLayout.SOUTH, panel, 5, SpringLayout.SOUTH, label);
         layout.putConstraint(SpringLayout.SOUTH, panel, 5, SpringLayout.SOUTH, input);
