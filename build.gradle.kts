@@ -22,6 +22,16 @@ dependencies.implementation("com.google.code.gson:gson:2.9.0")
 
 dependencies.implementation("com.formdev:flatlaf:2.3")
 
+java {
+    modularity.inferModulePath.set(true)
+}
+
+/* To make Kotlin compile and run properly with Gradle, this adds your Kotlin code to the Java
+ * source sets. */
+sourceSets.main {
+    java.srcDirs("src/main/java")
+}
+
 /* The Runtime plugin is used to configure the executables and other distributions for your
  * project. */
 jlink {
@@ -37,18 +47,18 @@ jlink {
         noConsole = false
     }
 
-    forceMerge("FastJ", "slf4j-api", "slf4j-simple", "gson", "flatlaf")
+    forceMerge("slf4j-api", "slf4j-simple", "gson", "flatlaf")
 
     jpackage {
         /* Use this to define the path of the icons for your project. */
         val iconPath = "project-resources/fastj_icon"
         val currentOs = org.gradle.internal.os.OperatingSystem.current()
 
-        addExtraDependencies("slf4j", "flatlaf", "gson")
+        addExtraDependencies("slf4j", "gson")
 
         installerOptions.addAll(
             listOf(
-                "--name", "Stack Attack",
+                "--name", "fastj-game-jam-2022-1",
                 "--description", project.description as String,
                 "--vendor", project.group as String,
                 "--app-version", project.version as String,
@@ -92,14 +102,18 @@ tasks.named("jpackageImage") {
     doLast {
         copy {
             from("audio").include("*.*")
-            into("$buildDir/jpackage/$name/audio")
+            into("$buildDir/jpackage/fastj-game-jam-2022-1/audio")
         }
         copy {
             from("img").include("*.*")
-            into("$buildDir/jpackage/$name/img")
+            into("$buildDir/jpackage/fastj-game-jam-2022-1/img")
         }
-        delete(fileTree("$buildDir/jpackage/$name/runtime") {
-            include("release", "bin/api**.dll", "bin/Stack Attack**", "lib/jrt-fs.jar")
+        copy {
+            from("json").include("*.*")
+            into("$buildDir/jpackage/fastj-game-jam-2022-1/json")
+        }
+        delete(fileTree("$buildDir/jpackage/fastj-game-jam-2022-1/runtime") {
+            include("release", "bin/api**.dll", "bin/fastj-game-jam-2022-1**", "lib/jrt-fs.jar")
         })
     }
 }
