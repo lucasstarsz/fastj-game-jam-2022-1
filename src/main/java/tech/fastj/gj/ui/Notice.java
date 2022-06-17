@@ -46,12 +46,12 @@ public class Notice extends GameObject implements Behavior {
 
     private boolean hasMetrics;
 
-    public Notice(String text, Color fillColor, Pointf location, BehaviorHandler handler) {
+    public Notice(String text, Pointf location, BehaviorHandler handler) {
         this.text = Objects.requireNonNullElse(text, DefaultText);
         this.location = location;
 
         setFont(DefaultFont);
-        setFill(fillColor);
+        setFill(DefaultFill);
 
         addBehavior(this, Objects.requireNonNull(handler));
     }

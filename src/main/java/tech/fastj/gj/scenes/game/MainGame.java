@@ -30,6 +30,7 @@ import tech.fastj.gj.rhythm.SongInfo;
 import tech.fastj.gj.scripts.MusicNoteMovement;
 import tech.fastj.gj.ui.ContentBox;
 import tech.fastj.gj.ui.Notice;
+import tech.fastj.gj.ui.PauseButton;
 import tech.fastj.gj.user.User;
 import tech.fastj.gj.util.Colors;
 import tech.fastj.gj.util.FilePaths;
@@ -45,6 +46,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
 
     private ContentBox songNameBox;
 
+    private PauseButton pauseButton;
     private PauseMenu pauseMenu;
     private KeyboardActionListener pauseListener;
     private boolean allowClicks;
@@ -104,6 +106,11 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
         if (pauseMenu != null) {
             pauseMenu.destroy(this);
             pauseMenu = null;
+        }
+
+        if (pauseButton != null) {
+            pauseButton.destroy(this);
+            pauseButton = null;
         }
 
         if (pauseListener != null) {
@@ -176,7 +183,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                     });
 
                     songNameBox = new ContentBox(this, "Now Playing", conductor.musicInfo.getSongName());
-                    songNameBox.setTranslation(new Pointf(30f));
+                    songNameBox.setTranslation(new Pointf(80f, 30f));
                     songNameBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
                     songNameBox.getStatDisplay().setFill(Colors.Snowy);
                     drawableManager.addUIElement(songNameBox);
@@ -201,7 +208,9 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                             conductor,
                             stackAttackInfo,
                             message -> {
-                                Notice notice = new Notice(message, "Perfect!".equalsIgnoreCase(message) ? Color.green : Color.red.brighter(), new Pointf(100f, 50f), this);
+                                Notice notice = new Notice(message, new Pointf(20f, 40f), this);
+                                notice.setFill("Perfect!".equalsIgnoreCase(message) ? Color.green : Color.red.brighter());
+                                notice.setFont(Fonts.StatTextFont);
                                 drawableManager.addGameObject(notice);
                             }
                     );
@@ -215,6 +224,18 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                         }
                     });
                     FastJEngine.getGameLoop().addEventObserver(this, ConductorFinishedEvent.class);
+
+                    pauseButton = new PauseButton(this, new Pointf(20f, 20f), new Pointf(40f));
+                    pauseButton.setFill(Color.gray);
+                    pauseButton.setOutlineColor(Color.black);
+                    pauseButton.addOnAction(event -> {
+                        if (event.isConsumed() || gameState != GameState.Playing || conductor.musicSource.getCurrentPlaybackState() != PlaybackState.Playing) {
+                            return;
+                        }
+
+                        event.consume();
+                        FastJEngine.runAfterUpdate(() -> changeState(GameState.Paused));
+                    });
 
                     pauseListener = new KeyboardActionListener() {
                         @Override
@@ -232,6 +253,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                 } else if (gameState == GameState.Paused) {
                     pauseMenu.setShouldRender(false);
                     conductor.setPaused(false);
+                    inputManager.addMouseActionListener(pauseButton);
                 }
                 inputManager.addKeyboardActionListener(pauseListener);
             }
@@ -244,6 +266,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                 conductor.setPaused(true);
                 pauseMenu.setShouldRender(true);
                 inputManager.removeKeyboardActionListener(pauseListener);
+                inputManager.removeMouseActionListener(pauseButton);
             }
             case Results -> {
                 if (keyCircles != null) {
@@ -252,6 +275,11 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                     }
                     keyCircles.clear();
                     keyCircles = null;
+                }
+
+                if (pauseButton != null) {
+                    pauseButton.destroy(this);
+                    pauseButton = null;
                 }
 
                 conductor.setPaused(true);

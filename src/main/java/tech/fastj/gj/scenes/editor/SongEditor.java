@@ -207,7 +207,9 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                             keyCircle.setFill(Color.white, false);
 
                             if (beat != -1) {
-                                Notice notice = new Notice("'" + event.getKey().name() + "' key at beat " + beat, Color.black, new Pointf(100f, 50f), this);
+                                Notice notice = new Notice("'" + event.getKey().name() + "' key at beat " + beat, new Pointf(100f, 50f), this);
+                                notice.setFill(Color.black);
+                                notice.setFont(Fonts.StatTextFont);
                                 drawableManager.addGameObject(notice);
                             }
                             return;
