@@ -93,6 +93,10 @@ public class ResultMenu extends UIElement<MouseActionEvent> {
     }
 
     private void setup(Pointf center) {
+        if (gameEndText != null) {
+            gameEndText.setFill(Colors.Snowy);
+        }
+
         if (scoreBox != null) {
             scoreBox.getStatDisplay().setFont(Fonts.StatTextFont);
             scoreBox.getStatDisplay().setFill(Colors.Snowy);
