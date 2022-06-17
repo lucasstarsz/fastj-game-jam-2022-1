@@ -42,6 +42,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
 import tech.fastj.gameloop.event.GameEventObserver;
@@ -160,9 +163,13 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                         if (editableSongInfo == null && !FastJEngine.<SceneManager>getLogicManager().getCurrentScene().getSceneName().equals(this.getSceneName())) {
                             return;
                         }
+
                     } while (editableSongInfo == null);
 
                     songInfo = editableSongInfo;
+                    if (editorState == EditorState.Results) {
+                        return;
+                    }
 
                     FastJEngine.runAfterRender(() -> changeState(EditorState.Recording));
                 });
@@ -307,140 +314,155 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                     FastJEngine.getGameLoop().removeEventObserver(this, ConductorFinishedEvent.class);
                 }
 
-                SwingUtilities.invokeLater(() -> {
-                    List<Pair<Double, Integer>> recordedNotes = inputMatcher.getRecordedNotes();
-                    double[] notes = recordedNotes.stream().mapToDouble(Pair::getLeft).toArray();
-                    int[] noteLanes = recordedNotes.stream().mapToInt(Pair::getRight).toArray();
+                if (editorState == EditorState.Setup || inputMatcher == null) {
+                    SwingUtilities.invokeLater(() -> {
+                        double[] notes = songInfo.notes;
+                        int[] noteLanes = songInfo.noteLanes;
 
-                    JPanel recordingDataPanel = new JPanel();
-                    SpringLayout springLayout = new SpringLayout();
-                    recordingDataPanel.setLayout(springLayout);
+                        editRecordedNotes(notes, noteLanes);
+                    });
+                } else {
+                    SwingUtilities.invokeLater(() -> {
+                        List<Pair<Double, Integer>> recordedNotes = inputMatcher.getRecordedNotes();
+                        double[] notes = recordedNotes.stream().mapToDouble(Pair::getLeft).toArray();
+                        int[] noteLanes = recordedNotes.stream().mapToInt(Pair::getRight).toArray();
 
-                    Pair<JLabel, JLabel> infoLabelCombo = setupDoubleLabelCombo(recordingDataPanel, "Note Beat", "Note Lane");
-                    List<Pair<JTextField, JTextField>> doubleInputCombos = new ArrayList<>();
-                    for (int i = 0; i < notes.length; i++) {
-                        doubleInputCombos.add(setupDoubleInputCombo(recordingDataPanel, notes[i], noteLanes[i]));
-                    }
-
-                    SpringUtilities.makeCompactGrid(recordingDataPanel, notes.length + 1, 2, 5, 5, 5, 5);
-
-                    JLabel resultsText = new JLabel("Recording was successful. Edit note beats and lanes below as needed.");
-                    JScrollPane scrollableDataPanel = new JScrollPane(recordingDataPanel);
-                    scrollableDataPanel.setPreferredSize(new Dimension(
-                            infoLabelCombo.getLeft().getWidth() + infoLabelCombo.getRight().getWidth(),
-                            200
-                    ));
-
-                    JPanel resultsPanel = new JPanel();
-                    resultsPanel.add(resultsText);
-                    resultsPanel.add(scrollableDataPanel);
-
-                    BorderLayout borderLayout = new BorderLayout();
-                    resultsPanel.setLayout(borderLayout);
-                    borderLayout.addLayoutComponent(resultsText, BorderLayout.PAGE_START);
-                    borderLayout.addLayoutComponent(scrollableDataPanel, BorderLayout.PAGE_END);
-
-                    while (true) {
-                        String[] resultOptions = {"Export", "Review Playback", "Retry", "Cancel"};
-
-                        int resultChoice = DialogUtil.showOptionDialog(
-                                DialogConfig.create()
-                                        .withTitle("Recording Successful")
-                                        .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                                        .withPrompt(resultsPanel)
-                                        .build(),
-                                DialogMessageTypes.Question,
-                                resultOptions,
-                                resultOptions[0]
-                        );
-
-                        switch (resultChoice) {
-                            case 0 -> {
-                                for (int i = 0; i < doubleInputCombos.size(); i++) {
-                                    notes[i] = Double.parseDouble(doubleInputCombos.get(i).getLeft().getText());
-                                    noteLanes[i] = Integer.parseInt(doubleInputCombos.get(i).getRight().getText());
-                                }
-                                songInfo.notes = notes;
-                                songInfo.noteLanes = noteLanes;
-
-                                Gson gson = new Gson();
-                                String songInfoJson = gson.toJson(songInfo);
-
-                                String path = browseForPath(
-                                        "Choose a location to save your song info file.",
-                                        FileDialog.SAVE,
-                                        songInfo.musicPath.substring(Math.max(0, songInfo.musicPath.lastIndexOf(File.separator)), songInfo.musicPath.lastIndexOf(".wav"))
-                                );
-
-                                if (path != null) {
-                                    try {
-                                        Files.writeString(Path.of(path), songInfoJson, StandardCharsets.UTF_8);
-                                        DialogUtil.showMessageDialog(
-                                                DialogConfig.create()
-                                                        .withTitle("Song info successfully saved")
-                                                        .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                                                        .withPrompt("Your song was successfully saved.")
-                                                        .build()
-                                        );
-
-                                    } catch (IOException exception) {
-                                        displayException("Failed to save song info", exception);
-                                    }
-                                }
-                            }
-                            case 1 -> {
-                                for (int i = 0; i < doubleInputCombos.size(); i++) {
-                                    notes[i] = Double.parseDouble(doubleInputCombos.get(i).getLeft().getText());
-                                    noteLanes[i] = Integer.parseInt(doubleInputCombos.get(i).getRight().getText());
-                                }
-                                songInfo.notes = notes;
-                                songInfo.noteLanes = noteLanes;
-                                FastJEngine.runAfterRender(() -> changeState(EditorState.Review));
-                                return;
-                            }
-                            case 2 -> {
-                                boolean confirmRetry = DialogUtil.showConfirmationDialog(
-                                        DialogConfig.create()
-                                                .withTitle("Retry notes for better accuracy?")
-                                                .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                                                .withPrompt("Retrying clears your previous notes. Are you sure you want to retry?")
-                                                .build(),
-                                        DialogOptions.YesNoCancel
-                                );
-
-                                if (confirmRetry) {
-                                    FastJEngine.runAfterRender(() -> changeState(EditorState.Setup));
-                                    return;
-                                }
-                            }
-                            default -> {
-                                boolean confirmReturn = DialogUtil.showConfirmationDialog(
-                                        DialogConfig.create()
-                                                .withTitle("Exit Song Editor")
-                                                .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                                                .withPrompt("Return to main menu? Any unsaved work will be lost.")
-                                                .build(),
-                                        DialogOptions.YesNoCancel
-                                );
-
-                                if (confirmReturn) {
-                                    FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu));
-                                    return;
-                                }
-                            }
-                        }
-                    }
-                });
+                        editRecordedNotes(notes, noteLanes);
+                    });
+                }
             }
         }
 
         editorState = next;
     }
 
+    private void editRecordedNotes(double[] notes, int[] noteLanes) {
+        JPanel recordingDataPanel = new JPanel();
+        SpringLayout springLayout = new SpringLayout();
+        recordingDataPanel.setLayout(springLayout);
+
+        Pair<JLabel, JLabel> infoLabelCombo = setupDoubleLabelCombo(recordingDataPanel, "Note Beat", "Note Lane");
+        List<Pair<JTextField, JTextField>> doubleInputCombos = new ArrayList<>();
+        for (int i = 0; i < notes.length; i++) {
+            doubleInputCombos.add(setupDoubleInputCombo(recordingDataPanel, notes[i], noteLanes[i]));
+        }
+
+        SpringUtilities.makeCompactGrid(recordingDataPanel, notes.length + 1, 2, 5, 5, 5, 5);
+
+        JLabel resultsText = new JLabel("Recording was successful. Edit note beats and lanes below as needed.");
+        JScrollPane scrollableDataPanel = new JScrollPane(recordingDataPanel);
+        scrollableDataPanel.setPreferredSize(new Dimension(
+                infoLabelCombo.getLeft().getWidth() + infoLabelCombo.getRight().getWidth(),
+                200
+        ));
+
+        JPanel resultsPanel = new JPanel();
+        resultsPanel.add(resultsText);
+        resultsPanel.add(scrollableDataPanel);
+
+        BorderLayout borderLayout = new BorderLayout();
+        resultsPanel.setLayout(borderLayout);
+        borderLayout.addLayoutComponent(resultsText, BorderLayout.PAGE_START);
+        borderLayout.addLayoutComponent(scrollableDataPanel, BorderLayout.PAGE_END);
+
+        while (true) {
+            String[] resultOptions = {"Export", "Review Playback", "Retry", "Cancel"};
+
+            int resultChoice = DialogUtil.showOptionDialog(
+                    DialogConfig.create()
+                            .withTitle("Recording Successful")
+                            .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                            .withPrompt(resultsPanel)
+                            .build(),
+                    DialogMessageTypes.Question,
+                    resultOptions,
+                    resultOptions[0]
+            );
+
+            switch (resultChoice) {
+                case 0 -> {
+                    for (int i = 0; i < doubleInputCombos.size(); i++) {
+                        notes[i] = Double.parseDouble(doubleInputCombos.get(i).getLeft().getText());
+                        noteLanes[i] = Integer.parseInt(doubleInputCombos.get(i).getRight().getText());
+                    }
+                    songInfo.notes = notes;
+                    songInfo.noteLanes = noteLanes;
+
+                    Gson gson = new Gson();
+                    String songInfoJson = gson.toJson(songInfo);
+
+                    String path = browseForPath(
+                            "Choose a location to save your song info file.",
+                            FileDialog.SAVE,
+                            songInfo.musicPath.substring(Math.max(0, songInfo.musicPath.lastIndexOf(File.separator)), songInfo.musicPath.lastIndexOf(".wav"))
+                    );
+
+                    if (path != null) {
+                        try {
+                            Files.writeString(Path.of(path), songInfoJson, StandardCharsets.UTF_8);
+                            DialogUtil.showMessageDialog(
+                                    DialogConfig.create()
+                                            .withTitle("Song info successfully saved")
+                                            .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                                            .withPrompt("Your song was successfully saved.")
+                                            .build()
+                            );
+
+                        } catch (IOException exception) {
+                            displayException("Failed to save song info", exception);
+                        }
+                    }
+                }
+                case 1 -> {
+                    for (int i = 0; i < doubleInputCombos.size(); i++) {
+                        notes[i] = Double.parseDouble(doubleInputCombos.get(i).getLeft().getText());
+                        noteLanes[i] = Integer.parseInt(doubleInputCombos.get(i).getRight().getText());
+                    }
+                    songInfo.notes = notes;
+                    songInfo.noteLanes = noteLanes;
+                    FastJEngine.runAfterRender(() -> changeState(EditorState.Review));
+                    return;
+                }
+                case 2 -> {
+                    boolean confirmRetry = DialogUtil.showConfirmationDialog(
+                            DialogConfig.create()
+                                    .withTitle("Retry notes for better accuracy?")
+                                    .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                                    .withPrompt("Retrying clears your previous notes. Are you sure you want to retry?")
+                                    .build(),
+                            DialogOptions.YesNoCancel
+                    );
+
+                    if (confirmRetry) {
+                        FastJEngine.runAfterRender(() -> changeState(EditorState.Setup));
+                        return;
+                    }
+                }
+                default -> {
+                    boolean confirmReturn = DialogUtil.showConfirmationDialog(
+                            DialogConfig.create()
+                                    .withTitle("Exit Song Editor")
+                                    .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                                    .withPrompt("Return to main menu? Any unsaved work will be lost.")
+                                    .build(),
+                            DialogOptions.YesNoCancel
+                    );
+
+                    if (confirmReturn) {
+                        FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu));
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
     private EditableSongInfo setupSongInfo() {
         JPanel songConfigPanel = new JPanel();
         SpringLayout springLayout = new SpringLayout();
         songConfigPanel.setLayout(springLayout);
+        AtomicBoolean hasJsonFile = new AtomicBoolean(false);
+        AtomicReference<EditableSongInfo> editableSongInfoRef = new AtomicReference<>();
 
         Pair<JLabel, JTextField> songNameCombo = setupInputCombo(songConfigPanel, "Song Name:");
         Pair<JLabel, JTextField> bpmCombo = setupInputCombo(songConfigPanel, "BPM:");
@@ -458,13 +480,47 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                 String path = browseForPath(
                         "Choose a song file to load.",
                         FileDialog.LOAD,
-                        (dir, name) -> name.endsWith(".wav"),
+                        (dir, name) -> name.endsWith(".wav") || name.endsWith(".json"),
+                        "Song must be of WAV (.wav) or JSON (.json) format.",
                         ".wav",
-                        "Song must be of WAV (.wav) format."
+                        ".json"
                 );
 
                 if (path != null) {
-                    musicPathInput.setText(path);
+                    if (path.endsWith(".json")) {
+                        boolean fillJsonData = DialogUtil.showConfirmationDialog(
+                                DialogConfig.create()
+                                        .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                                        .withTitle("JSON file detected.")
+                                        .withPrompt("Detected JSON file. Load JSON data?")
+                                        .build(),
+                                DialogOptions.YesNo
+                        );
+
+                        if (fillJsonData) {
+                            try {
+                                Gson gson = new Gson();
+                                String songInfoJson = Files.readString(Path.of(path));
+                                EditableSongInfo editableSongInfo = gson.fromJson(songInfoJson, EditableSongInfo.class);
+                                editableSongInfoRef.set(editableSongInfo);
+                                hasJsonFile.set(true);
+                                songNameCombo.getRight().setText(editableSongInfo.songName);
+                                bpmCombo.getRight().setText("" + editableSongInfo.bpm);
+                                beatPeekCombo.getRight().setText("" + editableSongInfo.beatPeekCount);
+                                beatOffsetCombo.getRight().setText("" + editableSongInfo.firstBeatOffset);
+                                musicPathInput.setText(editableSongInfo.musicPath);
+
+                                String laneKeysString = editableSongInfo.getLaneKeys().stream()
+                                        .map(Keys::name)
+                                        .collect(Collectors.joining(","));
+                                laneKeysCombo.getRight().setText(laneKeysString);
+                            } catch (IOException exception) {
+                                displayException("Error while trying to load JSON file at \"" + path + "\"", exception);
+                            }
+                        }
+                    } else if (path.endsWith(".wav")) {
+                        musicPathInput.setText(path);
+                    }
                 }
             }
         });
@@ -491,6 +547,25 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                         .build(),
                 DialogOptions.OkCancel
         );
+
+        if (hasJsonFile.get()) {
+            String[] options = {"Record New Notes", "Skip to Editing"};
+            int skipRecord = DialogUtil.showOptionDialog(
+                    DialogConfig.create()
+                            .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                            .withTitle("Detected JSON file.")
+                            .withPrompt("JSON file was detected. Would you like to skip to the editing process?")
+                            .build(),
+                    DialogMessageTypes.Question,
+                    options,
+                    "Skip to Editing"
+            );
+
+            if (skipRecord == 1) {
+                changeState(EditorState.Results);
+                return editableSongInfoRef.get();
+            }
+        }
 
         if (confirmation) {
             String songName = songNameCombo.getRight().getText().strip();
@@ -552,7 +627,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
         }
     }
 
-    private String browseForPath(String title, int fileDialogType, FilenameFilter filter, String fileType, String invalidFormatMessage) {
+    private String browseForPath(String title, int fileDialogType, FilenameFilter filter, String invalidFormatMessage, String firstFileType, String... otherFileTypes) {
         String file = null;
         String directory = null;
 
@@ -560,7 +635,6 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
             FileDialog songLoaderDialog = new FileDialog(FastJEngine.<SimpleDisplay>getDisplay().getWindow(), title, fileDialogType);
             songLoaderDialog.setDirectory(System.getProperty("user.home"));
             songLoaderDialog.setFilenameFilter(filter);
-            songLoaderDialog.setFile("*" + fileType);
             songLoaderDialog.setMultipleMode(false);
             songLoaderDialog.setVisible(true);
             file = songLoaderDialog.getFile();
@@ -570,15 +644,25 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                 return null;
             }
 
-            if (!file.endsWith(fileType)) {
-                DialogUtil.showMessageDialog(
-                        DialogConfig.create()
-                                .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                                .withTitle("Invalid file format")
-                                .withPrompt(invalidFormatMessage)
-                                .build()
-                );
-                file = null;
+            if (!file.endsWith(firstFileType)) {
+                boolean matchOtherFileType = false;
+                for (String otherFileType : otherFileTypes) {
+                    if (file.endsWith(otherFileType)) {
+                        matchOtherFileType = true;
+                        break;
+                    }
+                }
+
+                if (!matchOtherFileType) {
+                    DialogUtil.showMessageDialog(
+                            DialogConfig.create()
+                                    .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                                    .withTitle("Invalid file format")
+                                    .withPrompt(invalidFormatMessage)
+                                    .build()
+                    );
+                    file = null;
+                }
             }
         }
 
