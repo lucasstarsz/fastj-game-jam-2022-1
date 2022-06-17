@@ -12,6 +12,7 @@ import tech.fastj.input.keyboard.events.KeyboardStateEvent;
 import tech.fastj.systems.audio.state.PlaybackState;
 import tech.fastj.systems.control.Scene;
 
+import javax.swing.SwingUtilities;
 import java.awt.Color;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -132,6 +133,8 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
             resultMenu.destroy(this);
             resultMenu = null;
         }
+
+        FastJEngine.getGameLoop().removeEventObserver(this, ConductorFinishedEvent.class);
 
         setInitialized(false);
         Log.info(MainGame.class, "unloaded {}", getSceneName());
@@ -304,6 +307,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
 
                 conductor.setPaused(true);
                 inputManager.removeKeyboardActionListener(pauseListener);
+                SwingUtilities.invokeLater(() -> FastJEngine.runAfterUpdate(() -> FastJEngine.getGameLoop().removeEventObserver(this, ConductorFinishedEvent.class)));
             }
         }
         gameState = next;
