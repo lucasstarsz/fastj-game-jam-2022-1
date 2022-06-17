@@ -8,7 +8,6 @@ import tech.fastj.graphics.game.Polygon2D;
 import tech.fastj.graphics.game.RenderStyle;
 import tech.fastj.graphics.game.Text2D;
 import tech.fastj.graphics.ui.UIElement;
-import tech.fastj.graphics.ui.elements.Button;
 import tech.fastj.graphics.util.DrawUtil;
 
 import tech.fastj.input.mouse.events.MouseActionEvent;
@@ -21,32 +20,41 @@ import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 
 import tech.fastj.gj.rhythm.ConductorFinishedEvent;
+import tech.fastj.gj.ui.BetterButton;
 import tech.fastj.gj.ui.ContentBox;
+import tech.fastj.gj.util.Colors;
 import tech.fastj.gj.util.Fonts;
 import tech.fastj.gj.util.SceneNames;
 import tech.fastj.gj.util.Shapes;
 
 public class ResultMenu extends UIElement<MouseActionEvent> {
 
+    private Polygon2D alphaScreen;
     private Polygon2D backgroundScreen;
     private Text2D gameEndText;
     private ContentBox scoreBox;
     private ContentBox blocksStackedBox;
-    private Button playAgainButton;
-    private Button mainMenuButton;
-    private Button quitGameButton;
+    private BetterButton playAgainButton;
+    private BetterButton mainMenuButton;
+    private BetterButton quitGameButton;
 
     public ResultMenu(SimpleManager origin, ConductorFinishedEvent event) {
         super(origin);
 
         Pointf center = FastJEngine.getCanvas().getCanvasCenter();
         Point end = FastJEngine.getCanvas().getResolution().copy();
-        Pointf[] backgroundMesh = DrawUtil.createBox(50f, 50f, end.subtract(120, 140).asPointf());
+        Pointf[] backgroundMesh = DrawUtil.createBox(50f, 50f, Point.subtract(end, 120, 140).asPointf());
+        Pointf[] alphaMesh = DrawUtil.createBox(0f, 0f, end.asPointf());
 
         setCollisionPath(DrawUtil.createPath(backgroundMesh));
 
+        alphaScreen = Polygon2D.create(alphaMesh)
+                .withFill(Colors.darkGray(100).darker().darker())
+                .withRenderStyle(RenderStyle.Fill)
+                .build();
+
         backgroundScreen = Polygon2D.create(backgroundMesh)
-                .withFill(new Color(Color.lightGray.getRed(), Color.lightGray.getGreen(), Color.lightGray.getBlue(), 100))
+                .withFill(Colors.darkGray(255).brighter())
                 .withOutline(Shapes.ThickerRoundedStroke, Color.black)
                 .withRenderStyle(RenderStyle.FillAndOutline)
                 .build();
@@ -62,8 +70,8 @@ public class ResultMenu extends UIElement<MouseActionEvent> {
                 "" + event.getTotalNotesOverall()
         );
 
-        playAgainButton = new Button(origin, backgroundScreen.getCenter().subtract(100f, 0f), Shapes.ButtonSize);
-        quitGameButton = new Button(origin, backgroundScreen.getCenter().subtract(100f, -150f), Shapes.ButtonSize);
+        playAgainButton = new BetterButton(origin, backgroundScreen.getCenter().subtract(100f, 0f), Shapes.ButtonSize);
+        quitGameButton = new BetterButton(origin, backgroundScreen.getCenter().subtract(100f, -150f), Shapes.ButtonSize);
 
         setup(center);
 
@@ -87,12 +95,18 @@ public class ResultMenu extends UIElement<MouseActionEvent> {
 
         Pointf center = FastJEngine.getCanvas().getCanvasCenter();
         Point end = FastJEngine.getCanvas().getResolution().copy();
-        Pointf[] backgroundMesh = DrawUtil.createBox(50f, 50f, end.subtract(120, 140).asPointf());
+        Pointf[] backgroundMesh = DrawUtil.createBox(50f, 50f, Point.subtract(end, 120, 140).asPointf());
+        Pointf[] alphaMesh = DrawUtil.createBox(0f, 0f, end.asPointf());
 
         setCollisionPath(DrawUtil.createPath(backgroundMesh));
 
+        alphaScreen = Polygon2D.create(alphaMesh)
+                .withFill(Colors.darkGray(25).darker().darker())
+                .withRenderStyle(RenderStyle.Fill)
+                .build();
+
         backgroundScreen = Polygon2D.create(backgroundMesh)
-                .withFill(new Color(Color.lightGray.getRed(), Color.lightGray.getGreen(), Color.lightGray.getBlue(), 100))
+                .withFill(new Color(Color.lightGray.getRed(), Color.lightGray.getGreen(), Color.lightGray.getBlue(), 15))
                 .withOutline(Shapes.ThickerRoundedStroke, Color.black)
                 .withRenderStyle(RenderStyle.FillAndOutline)
                 .build();
@@ -108,9 +122,9 @@ public class ResultMenu extends UIElement<MouseActionEvent> {
                 "" + event.getTotalNotesOverall()
         );
 
-        playAgainButton = new Button(origin, backgroundScreen.getCenter().subtract(100f, 0f), Shapes.ButtonSize);
-        mainMenuButton = new Button(origin, backgroundScreen.getCenter().subtract(100f, -75f), Shapes.ButtonSize);
-        quitGameButton = new Button(origin, backgroundScreen.getCenter().subtract(100f, -150f), Shapes.ButtonSize);
+        playAgainButton = new BetterButton(origin, backgroundScreen.getCenter().subtract(100f, 0f), Shapes.ButtonSize);
+        mainMenuButton = new BetterButton(origin, backgroundScreen.getCenter().subtract(100f, -75f), Shapes.ButtonSize);
+        quitGameButton = new BetterButton(origin, backgroundScreen.getCenter().subtract(100f, -150f), Shapes.ButtonSize);
 
         setup(center);
 
@@ -133,7 +147,8 @@ public class ResultMenu extends UIElement<MouseActionEvent> {
     private void setup(Pointf center) {
         if (scoreBox != null) {
             scoreBox.getStatDisplay().setFont(Fonts.StatTextFont);
-            scoreBox.translate(Pointf.subtract(center, 100f, 90f));
+            scoreBox.getStatDisplay().setFill(Colors.Snowy);
+            scoreBox.translate(Pointf.subtract(center, scoreBox.width(), 90f));
         }
 
 //        blocksStackedBox = new ContentBox(
@@ -146,20 +161,26 @@ public class ResultMenu extends UIElement<MouseActionEvent> {
 
         if (playAgainButton != null) {
             playAgainButton.setText("Play Again");
-            playAgainButton.setFill(Color.white);
+            playAgainButton.setFill(Color.darkGray);
             playAgainButton.setFont(Fonts.ButtonTextFont);
+            playAgainButton.setOutlineColor(Colors.Snowy);
+            playAgainButton.setTextColor(Colors.Snowy);
         }
 
         if (mainMenuButton != null) {
             mainMenuButton.setText("Main Menu");
-            mainMenuButton.setFill(Color.white);
+            mainMenuButton.setFill(Color.darkGray);
             mainMenuButton.setFont(Fonts.ButtonTextFont);
+            mainMenuButton.setOutlineColor(Colors.Snowy);
+            mainMenuButton.setTextColor(Colors.Snowy);
         }
 
         if (quitGameButton != null) {
             quitGameButton.setText("Quit Game");
-            quitGameButton.setFill(Color.white);
+            quitGameButton.setFill(Color.darkGray);
             quitGameButton.setFont(Fonts.ButtonTextFont);
+            quitGameButton.setOutlineColor(Colors.Snowy);
+            quitGameButton.setTextColor(Colors.Snowy);
             quitGameButton.setOnAction(mouseButtonEvent -> {
                 mouseButtonEvent.consume();
                 FastJEngine.runAfterRender(FastJEngine.getDisplay()::close);
@@ -172,6 +193,7 @@ public class ResultMenu extends UIElement<MouseActionEvent> {
         AffineTransform oldTransform = (AffineTransform) g.getTransform().clone();
         g.transform(getTransformation());
 
+        alphaScreen.render(g);
         backgroundScreen.render(g);
         gameEndText.render(g);
         scoreBox.render(g);
@@ -186,6 +208,11 @@ public class ResultMenu extends UIElement<MouseActionEvent> {
     @Override
     public void destroy(Scene origin) {
         super.destroyTheRest(origin);
+        if (alphaScreen != null) {
+            alphaScreen.destroy(origin);
+            alphaScreen = null;
+        }
+
         if (backgroundScreen != null) {
             backgroundScreen.destroy(origin);
             backgroundScreen = null;
@@ -225,6 +252,11 @@ public class ResultMenu extends UIElement<MouseActionEvent> {
     @Override
     public void destroy(SimpleManager origin) {
         super.destroyTheRest(origin);
+        if (alphaScreen != null) {
+            alphaScreen.destroy(origin);
+            alphaScreen = null;
+        }
+
         if (backgroundScreen != null) {
             backgroundScreen.destroy(origin);
             backgroundScreen = null;

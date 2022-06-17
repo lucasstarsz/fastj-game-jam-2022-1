@@ -28,13 +28,13 @@ public class Conductor extends GameObject implements Behavior {
     public double songPositionInBeats;
     public double firstBeatOffset;
     public double dspSongTime;
+    public double pauseTimeOffset;
     public Audio musicSource;
     public GeneralSongInfo musicInfo;
     private BiConsumer<Double, Integer> spawnMusicNote;
     private boolean isFinished;
     private boolean isPaused;
     private boolean hasStarted;
-    private double pauseTimeOffset;
     private final ScheduledExecutorService musicPlayer = Executors.newSingleThreadScheduledExecutor();
 
     public Conductor(GeneralSongInfo musicInfo, BehaviorHandler behaviorHandler, boolean needsLateUpdate) {
@@ -66,7 +66,20 @@ public class Conductor extends GameObject implements Behavior {
 
         isPaused = paused;
         if (!isPaused) {
-            pauseTimeOffset += (System.nanoTime() / 1_000_000_000d) - songPosition;
+            pauseTimeOffset = (System.nanoTime() / 1_000_000_000d) - dspSongTime - (firstBeatOffset * secPerBeat) - songPosition;
+            System.out.println(songPosition);
+            System.out.println(pauseTimeOffset);
+            if (musicSource != null) {
+                if (musicSource.getCurrentPlaybackState() == PlaybackState.Paused) {
+                    musicSource.resume();
+                } else {
+                    musicSource.play();
+                }
+            }
+        } else {
+            if (musicSource != null) {
+                musicSource.pause();
+            }
         }
     }
 

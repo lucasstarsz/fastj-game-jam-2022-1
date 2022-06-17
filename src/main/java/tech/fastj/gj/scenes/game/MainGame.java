@@ -8,6 +8,8 @@ import tech.fastj.graphics.util.DrawUtil;
 
 import tech.fastj.input.keyboard.KeyboardActionListener;
 import tech.fastj.input.keyboard.Keys;
+import tech.fastj.input.keyboard.events.KeyboardStateEvent;
+import tech.fastj.systems.audio.state.PlaybackState;
 import tech.fastj.systems.control.Scene;
 
 import java.awt.Color;
@@ -29,6 +31,7 @@ import tech.fastj.gj.scripts.MusicNoteMovement;
 import tech.fastj.gj.ui.ContentBox;
 import tech.fastj.gj.ui.Notice;
 import tech.fastj.gj.user.User;
+import tech.fastj.gj.util.Colors;
 import tech.fastj.gj.util.FilePaths;
 import tech.fastj.gj.util.Fonts;
 import tech.fastj.gj.util.SceneNames;
@@ -162,9 +165,10 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
 
                     conductor.setSpawnMusicNote((note, noteLane) -> {
                         Pointf noteStartingLocation = new Pointf((canvas.getCanvasCenter().x * 1.5f) + (noteLane * Shapes.NoteSize * 2.5f), -Shapes.NoteSize / 2f);
+                        Color musicNoteColor = DrawUtil.randomColor();
                         MusicNote musicNote = new MusicNote(noteStartingLocation, Shapes.NoteSize)
-                                .setFill(DrawUtil.randomColor())
-                                .setOutline(MusicNote.DefaultOutlineStroke, DrawUtil.randomColor());
+                                .setFill(musicNoteColor)
+                                .setOutline(MusicNote.DefaultOutlineStroke, musicNoteColor.darker());
 
                         double noteTravelDistance = canvas.getResolution().y - (Shapes.NoteSize * 4f);
                         MusicNoteMovement musicNoteMovement = new MusicNoteMovement(conductor, note, noteTravelDistance);
@@ -172,9 +176,10 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                         drawableManager.addGameObject(musicNote);
                     });
 
-                    songNameBox = new ContentBox(this, "Now Playing", "" + conductor.musicInfo.getSongName());
+                    songNameBox = new ContentBox(this, "Now Playing", conductor.musicInfo.getSongName());
                     songNameBox.setTranslation(new Pointf(30f));
                     songNameBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
+                    songNameBox.getStatDisplay().setFill(Colors.Snowy);
                     drawableManager.addUIElement(songNameBox);
 
                     Collection<Keys> laneKeys = conductor.musicInfo.getLaneKeys();
@@ -183,7 +188,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                     for (Keys laneKey : laneKeys) {
                         Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x * 1.5f) + (laneKeyIncrement * Shapes.NoteSize * 2.5f), canvas.getResolution().y - (Shapes.NoteSize * 4f));
                         KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma", this)
-                                .setFill(Color.yellow)
+                                .setFill(Color.gray)
                                 .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
                                 .setTranslation(laneStartingLocation);
                         keyCircles.add(keyCircle);
@@ -197,7 +202,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                             conductor,
                             stackAttackInfo,
                             message -> {
-                                Notice notice = new Notice(message, Color.black, new Pointf(100f, 50f), this);
+                                Notice notice = new Notice(message, "Perfect!".equalsIgnoreCase(message) ? Color.green : Color.red.brighter(), new Pointf(100f, 50f), this);
                                 drawableManager.addGameObject(notice);
                             }
                     );
@@ -211,11 +216,25 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                         }
                     });
                     FastJEngine.getGameLoop().addEventObserver(this, ConductorFinishedEvent.class);
+
+                    pauseListener = new KeyboardActionListener() {
+                        @Override
+                        public void onKeyReleased(KeyboardStateEvent event) {
+                            if (event.isConsumed() || gameState != GameState.Playing || conductor.musicSource.getCurrentPlaybackState() != PlaybackState.Playing) {
+                                return;
+                            }
+
+                            if (event.getKey() == Keys.P || event.getKey() == Keys.Escape) {
+                                event.consume();
+                                FastJEngine.runAfterUpdate(() -> changeState(GameState.Paused));
+                            }
+                        }
+                    };
                 } else if (gameState == GameState.Paused) {
                     pauseMenu.setShouldRender(false);
-                    inputManager.addKeyboardActionListener(pauseListener);
                     conductor.setPaused(false);
                 }
+                inputManager.addKeyboardActionListener(pauseListener);
             }
             case Paused -> {
                 if (pauseMenu == null) {
@@ -223,9 +242,9 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                     drawableManager.addUIElement(pauseMenu);
                 }
 
+                conductor.setPaused(true);
                 pauseMenu.setShouldRender(true);
                 inputManager.removeKeyboardActionListener(pauseListener);
-                conductor.setPaused(true);
             }
             case Results -> {
                 if (keyCircles != null) {
@@ -237,6 +256,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                 }
 
                 conductor.setPaused(true);
+                inputManager.removeKeyboardActionListener(pauseListener);
             }
         }
         gameState = next;

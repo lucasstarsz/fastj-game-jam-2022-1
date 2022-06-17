@@ -3,6 +3,7 @@ package tech.fastj.gj;
 import tech.fastj.engine.FastJEngine;
 import tech.fastj.graphics.display.FastJCanvas;
 import tech.fastj.graphics.display.RenderSettings;
+import tech.fastj.graphics.display.SimpleDisplay;
 
 import tech.fastj.systems.control.SceneManager;
 
@@ -32,6 +33,7 @@ public class GameManager extends SceneManager {
             }
         });
 
+        FastJEngine.<SimpleDisplay>getDisplay().getWindow().setResizable(false);
         canvas.modifyRenderSettings(RenderSettings.Antialiasing.Enable);
         addScene(mainMenu);
         addScene(settings);

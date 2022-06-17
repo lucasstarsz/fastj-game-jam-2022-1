@@ -6,13 +6,14 @@ import tech.fastj.math.Pointf;
 import tech.fastj.math.Transform2D;
 import tech.fastj.graphics.display.FastJCanvas;
 import tech.fastj.graphics.game.Text2D;
-import tech.fastj.graphics.ui.elements.Button;
 
 import tech.fastj.systems.control.Scene;
 import tech.fastj.systems.control.SceneManager;
 
 import java.awt.Color;
 
+import tech.fastj.gj.ui.BetterButton;
+import tech.fastj.gj.util.Colors;
 import tech.fastj.gj.util.Fonts;
 import tech.fastj.gj.util.SceneNames;
 import tech.fastj.gj.util.Shapes;
@@ -25,7 +26,7 @@ public class InformationMenu extends Scene {
 
     private Text2D creditsHeader;
     private Text2D creditsText;
-    private Button mainMenuButton;
+    private BetterButton mainMenuButton;
 
     public InformationMenu() {
         super(SceneNames.Information);
@@ -66,10 +67,12 @@ public class InformationMenu extends Scene {
                 .build();
         drawableManager.addGameObject(creditsText);
 
-        mainMenuButton = new Button(this, Pointf.subtract(center, 100f, -150f), Shapes.ButtonSize);
+        mainMenuButton = new BetterButton(this, Pointf.subtract(center, 100f, -150f), Shapes.ButtonSize);
         mainMenuButton.setText("Back");
-        mainMenuButton.setFill(Color.white);
+        mainMenuButton.setFill(Color.darkGray);
         mainMenuButton.setFont(Fonts.ButtonTextFont);
+        mainMenuButton.setOutlineColor(Colors.Snowy);
+        mainMenuButton.setTextColor(Colors.Snowy);
         mainMenuButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
             FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu));

@@ -3,13 +3,11 @@ package tech.fastj.gj.scenes.game;
 import tech.fastj.engine.FastJEngine;
 import tech.fastj.math.Point;
 import tech.fastj.math.Pointf;
-import tech.fastj.math.Transform2D;
 import tech.fastj.graphics.Drawable;
 import tech.fastj.graphics.game.Polygon2D;
 import tech.fastj.graphics.game.RenderStyle;
 import tech.fastj.graphics.game.Text2D;
 import tech.fastj.graphics.ui.UIElement;
-import tech.fastj.graphics.ui.elements.Button;
 import tech.fastj.graphics.util.DrawUtil;
 
 import tech.fastj.input.mouse.events.MouseActionEvent;
@@ -20,6 +18,8 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 
+import tech.fastj.gj.ui.BetterButton;
+import tech.fastj.gj.util.Colors;
 import tech.fastj.gj.util.Fonts;
 import tech.fastj.gj.util.Shapes;
 
@@ -28,7 +28,7 @@ public class PauseMenu extends UIElement<MouseActionEvent> {
     private final MainGame origin;
     private Polygon2D backgroundScreen;
     private Text2D pausedText;
-    private Button resumeButton;
+    private BetterButton resumeButton;
 
     public PauseMenu(MainGame origin) {
         super(origin);
@@ -40,20 +40,23 @@ public class PauseMenu extends UIElement<MouseActionEvent> {
         setCollisionPath(DrawUtil.createPath(backgroundMesh));
 
         backgroundScreen = Polygon2D.create(backgroundMesh)
-                .withFill(new Color(Color.lightGray.getRed(), Color.lightGray.getGreen(), Color.lightGray.getBlue(), 100))
+                .withFill(Colors.gray(50))
                 .withOutline(Shapes.ThickerRoundedStroke, Color.black)
                 .withRenderStyle(RenderStyle.FillAndOutline)
                 .build();
 
         pausedText = Text2D.create("Paused")
                 .withFont(Fonts.TitleTextFont)
-                .withTransform(Pointf.subtract(center, 100f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
+                .withFill(Colors.Snowy)
                 .build();
+        pausedText.setTranslation(Pointf.subtract(center, pausedText.width() / 2f, 100f));
 
-        resumeButton = new Button(origin, backgroundScreen.getCenter().add(-100f, 100f), Shapes.ButtonSize);
+        resumeButton = new BetterButton(origin, backgroundScreen.getCenter().add(-100f, 100f), Shapes.ButtonSize);
         resumeButton.setText("Resume Game");
-        resumeButton.setFill(Color.white);
+        resumeButton.setFill(Color.darkGray);
         resumeButton.setFont(Fonts.ButtonTextFont);
+        resumeButton.setOutlineColor(Colors.Snowy);
+        resumeButton.setTextColor(Colors.Snowy);
         resumeButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
             FastJEngine.runAfterRender(() -> origin.changeState(GameState.Playing));

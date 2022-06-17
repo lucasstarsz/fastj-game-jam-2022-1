@@ -37,7 +37,7 @@ public final class GameInputMatcher implements KeyboardActionListener {
         }
 
         if (songInfo.getLaneKeys().contains(keyboardStateEvent.getKey())) {
-            double inputBeatPosition = (((keyboardStateEvent.getTimestamp() / 1_000_000_000d) - conductor.dspSongTime) / conductor.secPerBeat) - conductor.firstBeatOffset;
+            double inputBeatPosition = (((keyboardStateEvent.getTimestamp() / 1_000_000_000d) - conductor.dspSongTime - conductor.pauseTimeOffset) / conductor.secPerBeat) - conductor.firstBeatOffset;
             FastJEngine.trace("{} arrow key pressed at {}", keyboardStateEvent.getKey(), inputBeatPosition);
             checkNotes(inputBeatPosition, keyboardStateEvent.getKey());
         }
@@ -81,12 +81,35 @@ public final class GameInputMatcher implements KeyboardActionListener {
             if (!consumedNotes.contains(nextNote) && checkNote(nextNoteDistance, inputBeatPosition, "next", "Early.")) {
                 consumedNotes.add(nextNote);
                 FastJEngine.trace("consumed {}", nextNote);
+                return;
             }
         } else {
             if (!consumedNotes.contains(previousNote) && checkNote(lastNoteDistance, inputBeatPosition, "previous", "Late.")) {
                 consumedNotes.add(previousNote);
                 FastJEngine.trace("consumed {}", previousNote);
+                return;
             }
+        }
+
+        // why
+        double adjustedMaxDistance = MaxNoteDistance * (conductor.songBpm / 120d);
+        if (nextIndex - 1 >= 0
+                && Math.abs(inputBeatPosition - songInfo.getNote(nextIndex - 1)) < adjustedMaxDistance
+                && !consumedNotes.contains(songInfo.getNote(nextIndex - 1))
+                && inputKey != songInfo.getLaneKey(songInfo.getNoteLane(nextIndex - 1))) {
+            consumedNotes.add(previousNote);
+            FastJEngine.runAfterRender(() -> onSpawnNotice.accept("Wrong Lane!"));
+            FastJEngine.log("Input at {} was in the wrong lane.", inputBeatPosition);
+            return;
+        }
+
+        if (nextIndex != -1
+                && Math.abs(songInfo.getNote(nextIndex) - inputBeatPosition) < adjustedMaxDistance
+                && !consumedNotes.contains(songInfo.getNote(nextIndex))
+                && inputKey != songInfo.getLaneKey(songInfo.getNoteLane(nextIndex))) {
+            consumedNotes.add(songInfo.getNote(nextIndex));
+            FastJEngine.runAfterRender(() -> onSpawnNotice.accept("Wrong Lane!"));
+            FastJEngine.log("Input at {} was in the wrong lane.", inputBeatPosition);
         }
     }
 
@@ -126,8 +149,12 @@ public final class GameInputMatcher implements KeyboardActionListener {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == this) return true;
-        if (obj == null || obj.getClass() != this.getClass()) return false;
+        if (obj == this) {
+            return true;
+        }
+        if (obj == null || obj.getClass() != this.getClass()) {
+            return false;
+        }
         var that = (GameInputMatcher) obj;
         return Objects.equals(this.consumedNotes, that.consumedNotes) &&
                 Objects.equals(this.conductor, that.conductor) &&
