@@ -53,6 +53,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
 
     private ResultMenu resultMenu;
     private List<KeyCircle> keyCircles;
+    private List<MusicNote> musicNotes;
 
     public MainGame() {
         super(SceneNames.Game);
@@ -86,6 +87,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
 
         if (conductor != null) {
             conductor.setPaused(true);
+            conductor.destroy(this);
             conductor.musicSource.stop();
             conductor = null;
         }
@@ -101,6 +103,14 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
             }
             keyCircles.clear();
             keyCircles = null;
+        }
+
+        if (musicNotes != null) {
+            for (MusicNote musicNote : musicNotes) {
+                musicNote.destroy(this);
+            }
+            musicNotes.clear();
+            musicNotes = null;
         }
 
         if (pauseMenu != null) {
@@ -124,7 +134,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
         }
 
         setInitialized(false);
-        Log.debug(MainGame.class, "unloaded {}", getSceneName());
+        Log.info(MainGame.class, "unloaded {}", getSceneName());
     }
 
     @Override
@@ -169,6 +179,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                     conductor = new Conductor(stackAttackInfo, this, true);
                     FastJCanvas canvas = FastJEngine.getCanvas();
 
+                    musicNotes = new ArrayList<>();
                     conductor.setSpawnMusicNote((note, noteLane) -> {
                         Pointf noteStartingLocation = new Pointf((canvas.getCanvasCenter().x * 1.5f) + (noteLane * Shapes.NoteSize * 2.5f), -Shapes.NoteSize / 2f);
                         Color musicNoteColor = DrawUtil.randomColor();
@@ -179,6 +190,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                         double noteTravelDistance = canvas.getResolution().y - (Shapes.NoteSize * 4f);
                         MusicNoteMovement musicNoteMovement = new MusicNoteMovement(conductor, note, noteTravelDistance);
                         musicNote.addLateBehavior(musicNoteMovement, this);
+                        musicNotes.add(musicNote);
                         drawableManager.addGameObject(musicNote);
                     });
 
@@ -275,6 +287,14 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                     }
                     keyCircles.clear();
                     keyCircles = null;
+                }
+
+                if (musicNotes != null) {
+                    for (MusicNote musicNote : musicNotes) {
+                        musicNote.destroy(this);
+                    }
+                    musicNotes.clear();
+                    musicNotes = null;
                 }
 
                 if (pauseButton != null) {

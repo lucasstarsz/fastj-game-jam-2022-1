@@ -38,58 +38,6 @@ public class ResultMenu extends UIElement<MouseActionEvent> {
     private BetterButton mainMenuButton;
     private BetterButton quitGameButton;
 
-    public ResultMenu(SimpleManager origin, ConductorFinishedEvent event) {
-        super(origin);
-
-        Pointf center = FastJEngine.getCanvas().getCanvasCenter();
-        Point end = FastJEngine.getCanvas().getResolution().copy();
-        Pointf[] backgroundMesh = DrawUtil.createBox(50f, 50f, Point.subtract(end, 120, 140).asPointf());
-        Pointf[] alphaMesh = DrawUtil.createBox(0f, 0f, end.asPointf());
-
-        setCollisionPath(DrawUtil.createPath(backgroundMesh));
-
-        alphaScreen = Polygon2D.create(alphaMesh)
-                .withFill(Colors.darkGray(100).darker().darker())
-                .withRenderStyle(RenderStyle.Fill)
-                .build();
-
-        backgroundScreen = Polygon2D.create(backgroundMesh)
-                .withFill(Colors.darkGray(255).brighter())
-                .withOutline(Shapes.ThickerRoundedStroke, Color.black)
-                .withRenderStyle(RenderStyle.FillAndOutline)
-                .build();
-
-        gameEndText = Text2D.create("Game Ended.")
-                .withFont(Fonts.TitleTextFont)
-                .withTransform(Pointf.subtract(center, 160f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
-                .build();
-
-        scoreBox = new ContentBox(
-                origin,
-                "Total Notes",
-                "" + event.getTotalNotesOverall()
-        );
-
-        playAgainButton = new BetterButton(origin, backgroundScreen.getCenter().subtract(100f, 0f), Shapes.ButtonSize);
-        quitGameButton = new BetterButton(origin, backgroundScreen.getCenter().subtract(100f, -150f), Shapes.ButtonSize);
-
-        setup(center);
-
-        playAgainButton.setOnAction(mouseButtonEvent -> {
-            mouseButtonEvent.consume();
-            FastJEngine.runAfterRender(() -> {
-                origin.reset();
-                origin.init(FastJEngine.getCanvas());
-                origin.initBehaviors();
-            });
-        });
-
-        origin.drawableManager.removeUIElement(playAgainButton);
-        origin.drawableManager.removeUIElement(quitGameButton);
-        origin.drawableManager.removeUIElement(scoreBox);
-//        origin.drawableManager.removeUIElement(blocksStackedBox);
-    }
-
     public ResultMenu(MainGame origin, ConductorFinishedEvent event) {
         super(origin);
 
