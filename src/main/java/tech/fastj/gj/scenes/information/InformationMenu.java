@@ -11,8 +11,11 @@ import tech.fastj.systems.control.Scene;
 import tech.fastj.systems.control.SceneManager;
 
 import java.awt.Color;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import tech.fastj.gj.ui.BetterButton;
+import tech.fastj.gj.ui.LinkText;
 import tech.fastj.gj.util.Colors;
 import tech.fastj.gj.util.Fonts;
 import tech.fastj.gj.util.SceneNames;
@@ -23,9 +26,12 @@ public class InformationMenu extends Scene {
     private Text2D howToPlayHeader;
     private Text2D controlsText;
     private Text2D gameAimText;
+    private Text2D themeText;
+    private Text2D sendoffText;
 
     private Text2D creditsHeader;
     private Text2D creditsText;
+    private LinkText githubLink;
     private BetterButton mainMenuButton;
 
     public InformationMenu() {
@@ -39,33 +45,61 @@ public class InformationMenu extends Scene {
 
         howToPlayHeader = Text2D.create("How to Play")
                 .withFont(Fonts.SubtitleTextFont)
-                .withTransform(Pointf.subtract(center, 400f, 150f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
+                .withFill(Colors.Snowy)
+                .withTransform(Pointf.subtract(center, 425f, 150f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
                 .build();
         drawableManager.addGameObject(howToPlayHeader);
 
-        controlsText = Text2D.create("Notes will fall down from the top of the screen.")
-                .withFont(Fonts.SmallStatTextFont)
-                .withTransform(Pointf.subtract(center, 425f, 75f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
+        controlsText = Text2D.create("When running a song, music notes will fall down from the top of the screen.")
+                .withFont(Fonts.SmallStatTextFontPlain)
+                .withFill(Colors.Snowy)
+                .withTransform(Pointf.subtract(center, 605f, 75f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
                 .build();
         drawableManager.addGameObject(controlsText);
 
         gameAimText = Text2D.create("Time your key presses correctly to match when the note falls on the block.")
-                .withFont(Fonts.SmallStatTextFont)
-                .withTransform(Pointf.subtract(center, 500f, 50f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
+                .withFont(Fonts.SmallStatTextFontPlain)
+                .withFill(Colors.Snowy)
+                .withTransform(Pointf.subtract(center, 605f, 50f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
                 .build();
         drawableManager.addGameObject(gameAimText);
 
+        themeText = Text2D.create("Just one problem: you're limited by the delayed reaction of your speakers!")
+                .withFont(Fonts.SmallStatTextFontPlain)
+                .withFill(Colors.Snowy)
+                .withTransform(Pointf.subtract(center, 605f, 25f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
+                .build();
+        drawableManager.addGameObject(themeText);
+
+        sendoffText = Text2D.create("Try to keep up with the notes as they fall down.")
+                .withFont(Fonts.SmallStatTextFontPlain)
+                .withFill(Colors.Snowy)
+                .withTransform(Pointf.subtract(center, 605f, 0f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
+                .build();
+        drawableManager.addGameObject(sendoffText);
+
         creditsHeader = Text2D.create("Credits")
                 .withFont(Fonts.SubtitleTextFont)
-                .withTransform(Pointf.subtract(center, -200f, 150f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
+                .withFill(Colors.Snowy)
+                .withTransform(Pointf.subtract(center, -225f, 150f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
                 .build();
         drawableManager.addGameObject(creditsHeader);
 
         creditsText = Text2D.create("All content was made by lucasstarsz -- even the game engine!")
-                .withFont(Fonts.SmallStatTextFont)
-                .withTransform(Pointf.subtract(center, -75f, 75f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
+                .withFont(Fonts.SmallStatTextFontPlain)
+                .withFill(Colors.Snowy)
+                .withTransform(Pointf.subtract(center, -80f, 75f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
                 .build();
         drawableManager.addGameObject(creditsText);
+
+        try {
+            githubLink = new LinkText(this, "lucasstarsz's GitHub", new URL("https://github.com/lucasstarsz"));
+            githubLink.setFont(Fonts.SmallStatTextFontBold);
+            githubLink.setFill(Colors.Snowy);
+            githubLink.setTranslation(Pointf.subtract(center, -222.5f, 50f));
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
 
         mainMenuButton = new BetterButton(this, Pointf.subtract(center, 100f, -150f), Shapes.ButtonSize);
         mainMenuButton.setText("Back");
@@ -100,6 +134,16 @@ public class InformationMenu extends Scene {
             gameAimText = null;
         }
 
+        if (themeText != null) {
+            themeText.destroy(this);
+            themeText = null;
+        }
+
+        if (sendoffText != null) {
+            sendoffText.destroy(this);
+            sendoffText = null;
+        }
+
         if (creditsHeader != null) {
             creditsHeader.destroy(this);
             creditsHeader = null;
@@ -108,6 +152,11 @@ public class InformationMenu extends Scene {
         if (creditsText != null) {
             creditsText.destroy(this);
             creditsText = null;
+        }
+
+        if (githubLink != null) {
+            githubLink.destroy(this);
+            githubLink = null;
         }
 
         if (mainMenuButton != null) {
