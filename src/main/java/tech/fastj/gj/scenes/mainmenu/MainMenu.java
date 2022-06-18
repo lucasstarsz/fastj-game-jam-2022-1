@@ -105,7 +105,7 @@ public class MainMenu extends Scene {
         });
 
         mainMenuMusic = FastJEngine.getAudioManager().loadMemoryAudio(FilePaths.MainMenuMusic);
-        mainMenuMusic.setLoopPoints(MemoryAudio.LoopFromStart, MemoryAudio.LoopAtEnd);
+        mainMenuMusic.setLoopPoints(0.0096f, 0.951f);
         mainMenuMusic.setShouldLoop(true);
         mainMenuMusic.setLoopCount(MemoryAudio.ContinuousLoop);
         mainMenuMusic.play();
