@@ -178,7 +178,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
 
                     musicNotes = new ArrayList<>();
                     conductor.setSpawnMusicNote((note, noteLane) -> {
-                        Pointf noteStartingLocation = new Pointf((canvas.getCanvasCenter().x * 1.5f) + (noteLane * Shapes.NoteSize * 2.5f), -Shapes.NoteSize / 2f);
+                        Pointf noteStartingLocation = new Pointf((canvas.getCanvasCenter().x) + (noteLane * Shapes.NoteSize * 2.5f), -Shapes.NoteSize / 2f);
                         Color musicNoteColor = DrawUtil.randomColor();
                         MusicNote musicNote = new MusicNote(noteStartingLocation, Shapes.NoteSize)
                                 .setFill(musicNoteColor)
@@ -201,7 +201,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                     int laneKeyIncrement = 1;
                     keyCircles = new ArrayList<>();
                     for (Keys laneKey : laneKeys) {
-                        Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x * 1.5f) + (laneKeyIncrement * Shapes.NoteSize * 2.5f), canvas.getResolution().y - (Shapes.NoteSize * 4f));
+                        Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x) + (laneKeyIncrement * Shapes.NoteSize * 2.5f), canvas.getResolution().y - (Shapes.NoteSize * 4f));
                         KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma", this)
                                 .setFill(Color.gray)
                                 .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
