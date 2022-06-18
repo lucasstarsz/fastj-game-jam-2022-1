@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "tech.lucasz"
-version = "0.0.1"
+version = "1.0.0"
 description = "Rhythm game made for FastJ Game Jam 2022.1."
 
 application.mainClass.set("tech.fastj.gj.FastJGameJam2022")
