@@ -274,5 +274,5 @@
     "nextIndex": 0,
     "beatPeekCount": 4,
     "firstBeatOffset": -1.0,
-    "musicPath": "F:\\fastjengine\\fastj-game-jam-2022-1\\audio\\Ladybird.wav"
+    "musicPath": "audio\\Ladybird.wav"
 }
