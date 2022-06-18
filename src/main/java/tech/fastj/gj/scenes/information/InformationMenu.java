@@ -1,25 +1,23 @@
 package tech.fastj.gj.scenes.information;
 
 import tech.fastj.engine.FastJEngine;
-import tech.fastj.logging.Log;
-import tech.fastj.math.Pointf;
-import tech.fastj.math.Transform2D;
-import tech.fastj.graphics.display.FastJCanvas;
-import tech.fastj.graphics.game.Text2D;
-
-import tech.fastj.systems.control.Scene;
-import tech.fastj.systems.control.SceneManager;
-
-import java.awt.Color;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import tech.fastj.gj.ui.BetterButton;
 import tech.fastj.gj.ui.LinkText;
 import tech.fastj.gj.util.Colors;
 import tech.fastj.gj.util.Fonts;
 import tech.fastj.gj.util.SceneNames;
 import tech.fastj.gj.util.Shapes;
+import tech.fastj.graphics.display.FastJCanvas;
+import tech.fastj.graphics.game.Text2D;
+import tech.fastj.logging.Log;
+import tech.fastj.math.Pointf;
+import tech.fastj.math.Transform2D;
+import tech.fastj.systems.control.Scene;
+import tech.fastj.systems.control.SceneManager;
+
+import java.awt.*;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class InformationMenu extends Scene {
 
@@ -32,6 +30,7 @@ public class InformationMenu extends Scene {
     private Text2D creditsHeader;
     private Text2D creditsText;
     private LinkText githubLink;
+    private LinkText spotifyLink;
     private BetterButton mainMenuButton;
 
     public InformationMenu() {
@@ -97,8 +96,13 @@ public class InformationMenu extends Scene {
             githubLink.setFont(Fonts.SmallStatTextFontBold);
             githubLink.setFill(Colors.Snowy);
             githubLink.setTranslation(Pointf.subtract(center, -222.5f, 50f));
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+
+            spotifyLink = new LinkText(this, "lucasstarsz's Spotify", new URL("https://soundcloud.com/lucas-z-43717769/"));
+            spotifyLink.setFont(Fonts.SmallStatTextFontBold);
+            spotifyLink.setFill(Colors.Snowy);
+            spotifyLink.setTranslation(Pointf.subtract(center, -222.5f, 25f));
+        } catch (MalformedURLException exception) {
+            throw new RuntimeException(exception);
         }
 
         mainMenuButton = new BetterButton(this, Pointf.subtract(center, 100f, -150f), Shapes.ButtonSize);
@@ -157,6 +161,11 @@ public class InformationMenu extends Scene {
         if (githubLink != null) {
             githubLink.destroy(this);
             githubLink = null;
+        }
+
+        if (spotifyLink != null) {
+            spotifyLink.destroy(this);
+            spotifyLink = null;
         }
 
         if (mainMenuButton != null) {

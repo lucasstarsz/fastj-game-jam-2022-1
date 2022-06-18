@@ -1,20 +1,6 @@
 package tech.fastj.gj.scenes.mainmenu;
 
 import tech.fastj.engine.FastJEngine;
-import tech.fastj.logging.Log;
-import tech.fastj.math.Pointf;
-import tech.fastj.math.Transform2D;
-import tech.fastj.graphics.display.FastJCanvas;
-import tech.fastj.graphics.game.Text2D;
-
-import tech.fastj.systems.audio.AudioEvent;
-import tech.fastj.systems.audio.MemoryAudio;
-import tech.fastj.systems.control.Scene;
-import tech.fastj.systems.control.SceneManager;
-
-import java.awt.Color;
-import java.io.IOException;
-
 import tech.fastj.gj.FastJGameJam2022;
 import tech.fastj.gj.ui.BetterButton;
 import tech.fastj.gj.util.Colors;
@@ -22,6 +8,18 @@ import tech.fastj.gj.util.FilePaths;
 import tech.fastj.gj.util.Fonts;
 import tech.fastj.gj.util.SceneNames;
 import tech.fastj.gj.util.Shapes;
+import tech.fastj.graphics.display.FastJCanvas;
+import tech.fastj.graphics.game.Text2D;
+import tech.fastj.logging.Log;
+import tech.fastj.math.Pointf;
+import tech.fastj.math.Transform2D;
+import tech.fastj.systems.audio.AudioEvent;
+import tech.fastj.systems.audio.MemoryAudio;
+import tech.fastj.systems.control.Scene;
+import tech.fastj.systems.control.SceneManager;
+
+import java.awt.*;
+import java.io.IOException;
 
 public class MainMenu extends Scene {
 
@@ -57,7 +55,7 @@ public class MainMenu extends Scene {
         playButton.setTextColor(Colors.Snowy);
         playButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
-            FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.Game));
+            FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.SongPicker, false));
         });
 
         infoButton = new BetterButton(this, Pointf.subtract(center, -25f, 50f), Shapes.ButtonSize);

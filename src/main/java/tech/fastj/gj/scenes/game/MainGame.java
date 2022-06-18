@@ -1,26 +1,6 @@
 package tech.fastj.gj.scenes.game;
 
 import tech.fastj.engine.FastJEngine;
-import tech.fastj.logging.Log;
-import tech.fastj.math.Pointf;
-import tech.fastj.graphics.display.FastJCanvas;
-import tech.fastj.graphics.util.DrawUtil;
-
-import tech.fastj.input.keyboard.KeyboardActionListener;
-import tech.fastj.input.keyboard.Keys;
-import tech.fastj.input.keyboard.events.KeyboardStateEvent;
-import tech.fastj.systems.audio.state.PlaybackState;
-import tech.fastj.systems.control.Scene;
-
-import javax.swing.SwingUtilities;
-import java.awt.Color;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
-import com.google.gson.Gson;
 import tech.fastj.gameloop.event.GameEventObserver;
 import tech.fastj.gj.gameobjects.KeyCircle;
 import tech.fastj.gj.gameobjects.MusicNote;
@@ -34,16 +14,31 @@ import tech.fastj.gj.ui.Notice;
 import tech.fastj.gj.ui.PauseButton;
 import tech.fastj.gj.user.User;
 import tech.fastj.gj.util.Colors;
-import tech.fastj.gj.util.FilePaths;
 import tech.fastj.gj.util.Fonts;
 import tech.fastj.gj.util.SceneNames;
 import tech.fastj.gj.util.Shapes;
+import tech.fastj.graphics.display.FastJCanvas;
+import tech.fastj.graphics.util.DrawUtil;
+import tech.fastj.input.keyboard.KeyboardActionListener;
+import tech.fastj.input.keyboard.Keys;
+import tech.fastj.input.keyboard.events.KeyboardStateEvent;
+import tech.fastj.logging.Log;
+import tech.fastj.math.Pointf;
+import tech.fastj.systems.audio.state.PlaybackState;
+import tech.fastj.systems.control.Scene;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class MainGame extends Scene implements GameEventObserver<ConductorFinishedEvent> {
 
     private GameState gameState;
     private User user;
     private Conductor conductor;
+    private SongInfo songInfo;
 
     private ContentBox songNameBox;
 
@@ -66,6 +61,14 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
 
     public boolean isRhythmInputAllowed() {
         return allowClicks;
+    }
+
+    public void setSongInfo(SongInfo songInfo) {
+        if (isInitialized()) {
+            throw new IllegalStateException("bad");
+        }
+
+        this.songInfo = songInfo;
     }
 
     @Override
@@ -170,16 +173,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                 if (gameState == GameState.Intro) {
                     user = User.getInstance();
 
-                    Gson gson = new Gson();
-                    String stackAttackJson;
-                    try {
-                        stackAttackJson = Files.readString(FilePaths.StackAttackJson);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    SongInfo stackAttackInfo = gson.fromJson(stackAttackJson, SongInfo.class);
-                    conductor = new Conductor(stackAttackInfo, this, true);
+                    conductor = new Conductor(songInfo, this, true);
                     FastJCanvas canvas = FastJEngine.getCanvas();
 
                     musicNotes = new ArrayList<>();
@@ -221,7 +215,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
 
                     GameInputMatcher inputMatcher = new GameInputMatcher(
                             conductor,
-                            stackAttackInfo,
+                            songInfo,
                             message -> {
                                 Notice notice = new Notice(message, new Pointf(20f, 40f), this);
                                 notice.setFill("Perfect!".equalsIgnoreCase(message) ? Color.green : Color.red.brighter());
