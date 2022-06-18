@@ -88,6 +88,11 @@ public class SongInfo implements GeneralSongInfo {
         nextIndex++;
     }
 
+    @Override
+    public void resetNextIndex() {
+        nextIndex = 0;
+    }
+
     public int findIndex(double beat, double maxBeatDistance) {
         if (beat + maxBeatDistance >= notes[notes.length - 1]) {
             return -1;

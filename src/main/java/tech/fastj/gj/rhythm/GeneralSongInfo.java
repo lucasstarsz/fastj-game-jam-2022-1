@@ -29,4 +29,6 @@ public interface GeneralSongInfo {
     int getNextIndex();
 
     void incrementNextIndex();
+
+    void resetNextIndex();
 }

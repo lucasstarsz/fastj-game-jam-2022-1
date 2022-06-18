@@ -144,6 +144,7 @@ public class EditableSongInfo implements GeneralSongInfo {
                 '}';
     }
 
+    @Override
     public void resetNextIndex() {
         nextIndex = 0;
     }

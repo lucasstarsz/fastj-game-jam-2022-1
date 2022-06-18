@@ -1,52 +1,7 @@
 package tech.fastj.gj.scenes.editor;
 
-import tech.fastj.engine.FastJEngine;
-import tech.fastj.logging.Log;
-import tech.fastj.math.Maths;
-import tech.fastj.math.Pointf;
-import tech.fastj.graphics.dialog.DialogConfig;
-import tech.fastj.graphics.dialog.DialogMessageTypes;
-import tech.fastj.graphics.dialog.DialogOptions;
-import tech.fastj.graphics.dialog.DialogUtil;
-import tech.fastj.graphics.display.FastJCanvas;
-import tech.fastj.graphics.display.SimpleDisplay;
-import tech.fastj.graphics.util.DrawUtil;
-
-import tech.fastj.input.keyboard.Keys;
-import tech.fastj.systems.collections.Pair;
-import tech.fastj.systems.control.Scene;
-import tech.fastj.systems.control.SceneManager;
-
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SpringLayout;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.FileDialog;
-import java.awt.Font;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-
 import com.google.gson.Gson;
+import tech.fastj.engine.FastJEngine;
 import tech.fastj.gameloop.event.GameEventObserver;
 import tech.fastj.gj.gameobjects.KeyCircle;
 import tech.fastj.gj.gameobjects.MusicNote;
@@ -63,6 +18,37 @@ import tech.fastj.gj.util.Fonts;
 import tech.fastj.gj.util.SceneNames;
 import tech.fastj.gj.util.Shapes;
 import tech.fastj.gj.util.SpringUtilities;
+import tech.fastj.graphics.dialog.DialogConfig;
+import tech.fastj.graphics.dialog.DialogMessageTypes;
+import tech.fastj.graphics.dialog.DialogOptions;
+import tech.fastj.graphics.dialog.DialogUtil;
+import tech.fastj.graphics.display.FastJCanvas;
+import tech.fastj.graphics.display.SimpleDisplay;
+import tech.fastj.graphics.util.DrawUtil;
+import tech.fastj.input.keyboard.Keys;
+import tech.fastj.logging.Log;
+import tech.fastj.math.Maths;
+import tech.fastj.math.Pointf;
+import tech.fastj.systems.collections.Pair;
+import tech.fastj.systems.control.Scene;
+import tech.fastj.systems.control.SceneManager;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 public class SongEditor extends Scene implements GameEventObserver<ConductorFinishedEvent> {
 
@@ -366,7 +352,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
         borderLayout.addLayoutComponent(scrollableDataPanel, BorderLayout.PAGE_END);
 
         while (true) {
-            String[] resultOptions = {"Export", "Review Playback", "Retry", "Cancel"};
+            String[] resultOptions = {"Export", "Review Playback", "Reset Notes", "Exit"};
 
             int resultChoice = DialogUtil.showOptionDialog(
                     DialogConfig.create()
@@ -387,6 +373,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                     }
                     songInfo.notes = notes;
                     songInfo.noteLanes = noteLanes;
+                    songInfo.resetNextIndex();
 
                     Gson gson = new Gson();
                     String songInfoJson = gson.toJson(songInfo);
@@ -525,6 +512,20 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
             }
         });
 
+        if (songInfo != null) {
+            editableSongInfoRef.set(songInfo);
+            songNameCombo.getRight().setText(songInfo.songName);
+            bpmCombo.getRight().setText("" + songInfo.bpm);
+            beatPeekCombo.getRight().setText("" + songInfo.beatPeekCount);
+            beatOffsetCombo.getRight().setText("" + songInfo.firstBeatOffset);
+            musicPathInput.setText(songInfo.musicPath);
+
+            String laneKeysString = songInfo.getLaneKeys().stream()
+                    .map(Keys::name)
+                    .collect(Collectors.joining(","));
+            laneKeysCombo.getRight().setText(laneKeysString);
+        }
+
         musicPathLabel.setLabelFor(musicPathInput);
         songConfigPanel.add(musicPathLabel);
         songConfigPanel.add(musicPathInput);
@@ -539,35 +540,55 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
         beatOffsetCombo.getRight().setInputVerifier(decimalVerifier);
         beatPeekCombo.getRight().setInputVerifier(integerVerifier);
 
-        boolean confirmation = DialogUtil.showConfirmationDialog(
-                DialogConfig.create()
-                        .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                        .withTitle("Song Configuration")
-                        .withPrompt(songConfigPanel)
-                        .build(),
-                DialogOptions.OkCancel
-        );
-
-        if (hasJsonFile.get()) {
-            String[] options = {"Record New Notes", "Skip to Editing"};
-            int skipRecord = DialogUtil.showOptionDialog(
+        while (true) {
+            boolean confirmation = DialogUtil.showConfirmationDialog(
                     DialogConfig.create()
                             .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                            .withTitle("Detected JSON file.")
-                            .withPrompt("JSON file was detected. Would you like to skip to the editing process?")
+                            .withTitle("Song Configuration")
+                            .withPrompt(songConfigPanel)
                             .build(),
-                    DialogMessageTypes.Question,
-                    options,
-                    "Skip to Editing"
+                    DialogOptions.OkCancel
             );
 
-            if (skipRecord == 1) {
-                changeState(EditorState.Results);
-                return editableSongInfoRef.get();
-            }
-        }
+            if (!confirmation) {
+                boolean confirmReturn = DialogUtil.showConfirmationDialog(
+                        DialogConfig.create()
+                                .withTitle("Exit Song Editor")
+                                .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                                .withPrompt("Return to main menu? Any unsaved work will be lost.")
+                                .build(),
+                        DialogOptions.YesNoCancel
+                );
 
-        if (confirmation) {
+                if (confirmReturn) {
+                    FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu));
+                    return null;
+                } else {
+                    continue;
+                }
+            }
+
+            if (hasJsonFile.get()) {
+                String[] options = {"Record New Notes", "Skip to Editing"};
+                int skipRecord = DialogUtil.showOptionDialog(
+                        DialogConfig.create()
+                                .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                                .withTitle("Detected JSON file.")
+                                .withPrompt("JSON file was detected. Would you like to skip to the editing process?")
+                                .build(),
+                        DialogMessageTypes.Question,
+                        options,
+                        "Skip to Editing"
+                );
+
+                if (skipRecord == 1) {
+                    changeState(EditorState.Results);
+                    return editableSongInfoRef.get();
+                } else if (skipRecord == -1) {
+                    continue;
+                }
+            }
+
             String songName = songNameCombo.getRight().getText().strip();
 
             double bpm;
@@ -610,20 +631,6 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
 
             String musicPath = musicPathInput.getText();
             return new EditableSongInfo(songName, bpm, beatPeekCount, songBeatOffset, laneKeys, musicPath);
-        } else {
-            boolean returnToMainMenu = DialogUtil.showConfirmationDialog(
-                    DialogConfig.create()
-                            .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                            .withTitle("Exit Song Editor")
-                            .withPrompt("Song info editing was cancelled. Exit?")
-                            .build(),
-                    DialogOptions.YesNo
-            );
-
-            if (returnToMainMenu) {
-                FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu);
-            }
-            return null;
         }
     }
 

@@ -154,12 +154,13 @@ public class Conductor extends GameObject implements Behavior {
         if (hasStarted && !isFinished && musicInfo.getNextIndex() >= musicInfo.getNotesLength() && musicSource.getCurrentPlaybackState() == PlaybackState.Stopped) {
             FastJEngine.log("early ending");
             isFinished = true;
+            musicInfo.resetNextIndex();
             ConductorFinishedEvent event = new ConductorFinishedEvent(musicInfo.getNotesLength());
             FastJEngine.runAfterRender(() -> FastJEngine.getGameLoop().fireEvent(event));
             return;
         }
 
-        if (isPaused) {
+        if (isPaused || isFinished) {
             return;
         }
 
