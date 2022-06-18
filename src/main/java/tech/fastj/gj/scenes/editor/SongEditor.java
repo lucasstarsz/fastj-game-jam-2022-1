@@ -62,6 +62,8 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
     private List<KeyCircle> keyCircles;
     private List<MusicNote> musicNotes;
 
+    private static final EditableSongInfo MainMenuSwitch = new EditableSongInfo();
+
     public SongEditor() {
         super(SceneNames.SongEditor);
     }
@@ -146,7 +148,10 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                     EditableSongInfo editableSongInfo;
                     do {
                         editableSongInfo = setupSongInfo();
+
                         if (editableSongInfo == null && !FastJEngine.<SceneManager>getLogicManager().getCurrentScene().getSceneName().equals(this.getSceneName())) {
+                            return;
+                        } else if (editableSongInfo != null && editableSongInfo.equals(MainMenuSwitch)) {
                             return;
                         }
 
@@ -562,7 +567,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
 
                 if (confirmReturn) {
                     FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu));
-                    return null;
+                    return MainMenuSwitch;
                 } else {
                     continue;
                 }
