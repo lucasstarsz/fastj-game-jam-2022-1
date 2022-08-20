@@ -1,7 +1,7 @@
 package tech.fastj.gj.rhythm;
 
 import tech.fastj.engine.FastJEngine;
-
+import tech.fastj.gameloop.CoreLoopState;
 import tech.fastj.input.keyboard.KeyboardActionListener;
 import tech.fastj.input.keyboard.Keys;
 import tech.fastj.input.keyboard.events.KeyboardStateEvent;
@@ -98,7 +98,7 @@ public final class GameInputMatcher implements KeyboardActionListener {
                 && !consumedNotes.contains(songInfo.getNote(nextIndex - 1))
                 && inputKey != songInfo.getLaneKey(songInfo.getNoteLane(nextIndex - 1))) {
             consumedNotes.add(previousNote);
-            FastJEngine.runAfterRender(() -> onSpawnNotice.accept("Wrong Lane!"));
+            FastJEngine.runLater(() -> onSpawnNotice.accept("Wrong Lane!"), CoreLoopState.Update);
             FastJEngine.log("Input at {} was in the wrong lane.", inputBeatPosition);
             return;
         }
@@ -108,7 +108,7 @@ public final class GameInputMatcher implements KeyboardActionListener {
                 && !consumedNotes.contains(songInfo.getNote(nextIndex))
                 && inputKey != songInfo.getLaneKey(songInfo.getNoteLane(nextIndex))) {
             consumedNotes.add(songInfo.getNote(nextIndex));
-            FastJEngine.runAfterRender(() -> onSpawnNotice.accept("Wrong Lane!"));
+            FastJEngine.runLater(() -> onSpawnNotice.accept("Wrong Lane!"), CoreLoopState.Update);
             FastJEngine.log("Input at {} was in the wrong lane.", inputBeatPosition);
         }
     }
@@ -122,7 +122,7 @@ public final class GameInputMatcher implements KeyboardActionListener {
             double adjustedPerfectDistance = PerfectNoteDistance * (conductor.songBpm / 120d);
             String resultMessage = nextNoteDistance < adjustedPerfectDistance ? "Perfect!" : helpfulTip;
             FastJEngine.log("Input was {} beats away from {} note. {}", nextNoteDistance, nextOrPrevious, resultMessage);
-            FastJEngine.runAfterRender(() -> onSpawnNotice.accept(resultMessage));
+            FastJEngine.runLater(() -> onSpawnNotice.accept(resultMessage), CoreLoopState.Update);
             return true;
         }
     }

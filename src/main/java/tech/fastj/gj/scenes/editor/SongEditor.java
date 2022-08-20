@@ -2,13 +2,15 @@ package tech.fastj.gj.scenes.editor;
 
 import com.google.gson.Gson;
 import tech.fastj.engine.FastJEngine;
-import tech.fastj.gameloop.event.GameEventObserver;
+import tech.fastj.gameloop.CoreLoopState;
+import tech.fastj.gameloop.event.EventObserver;
 import tech.fastj.gj.gameobjects.KeyCircle;
 import tech.fastj.gj.gameobjects.MusicNote;
 import tech.fastj.gj.rhythm.Conductor;
 import tech.fastj.gj.rhythm.ConductorFinishedEvent;
 import tech.fastj.gj.rhythm.EditableSongInfo;
 import tech.fastj.gj.rhythm.EditorInputMatcher;
+import tech.fastj.gj.rhythm.RecordedNote;
 import tech.fastj.gj.scenes.game.MainGame;
 import tech.fastj.gj.scripts.MusicNoteMovement;
 import tech.fastj.gj.ui.ContentBox;
@@ -29,7 +31,6 @@ import tech.fastj.input.keyboard.Keys;
 import tech.fastj.logging.Log;
 import tech.fastj.math.Maths;
 import tech.fastj.math.Pointf;
-import tech.fastj.systems.collections.Pair;
 import tech.fastj.systems.control.Scene;
 import tech.fastj.systems.control.SceneManager;
 
@@ -50,7 +51,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-public class SongEditor extends Scene implements GameEventObserver<ConductorFinishedEvent> {
+public class SongEditor extends Scene implements EventObserver<ConductorFinishedEvent> {
 
     private EditorState editorState;
     private EditableSongInfo songInfo;
@@ -162,7 +163,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                         return;
                     }
 
-                    FastJEngine.runAfterRender(() -> changeState(EditorState.Recording));
+                    FastJEngine.runLater(() -> changeState(EditorState.Recording), CoreLoopState.Update);
                 });
             }
             case Recording -> {
@@ -173,13 +174,13 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                 songNameBox.setTranslation(new Pointf(30f));
                 songNameBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
                 songNameBox.getStatDisplay().setFill(Colors.Snowy);
-                drawableManager.addUIElement(songNameBox);
+                drawableManager().addUIElement(songNameBox);
 
                 beatBox = new ContentBox(this, "Beat", "" + conductor.songPositionInBeats);
                 beatBox.setTranslation(new Pointf(30f, 50f));
                 beatBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
                 beatBox.getStatDisplay().setFill(Colors.Snowy);
-                drawableManager.addUIElement(beatBox);
+                drawableManager().addUIElement(beatBox);
 
                 Collection<Keys> laneKeys = conductor.musicInfo.getLaneKeys();
                 int laneKeyIncrement = 1;
@@ -191,14 +192,14 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                             .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
                             .setTranslation(laneStartingLocation);
                     keyCircles.add(keyCircle);
-                    drawableManager.addGameObject(keyCircle);
+                    drawableManager().addGameObject(keyCircle);
                     laneKeyIncrement++;
                 }
 
-                drawableManager.addGameObject(conductor);
+                drawableManager().addGameObject(conductor);
 
                 inputMatcher = new EditorInputMatcher(conductor, songInfo);
-                inputManager.addKeyboardActionListener(inputMatcher);
+                inputManager().addKeyboardActionListener(inputMatcher);
                 inputMatcher.setOnLaneKeyPressed((event, beat) -> {
                     for (KeyCircle keyCircle : keyCircles) {
                         if (keyCircle.getKey() == event.getKey()) {
@@ -208,7 +209,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                                 Notice notice = new Notice("'" + event.getKey().name() + "' key at beat " + beat, new Pointf(100f, 50f), this);
                                 notice.setFill(Color.black);
                                 notice.setFont(Fonts.StatTextFont);
-                                drawableManager.addGameObject(notice);
+                                drawableManager().addGameObject(notice);
                             }
                             return;
                         }
@@ -233,20 +234,20 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                     MusicNoteMovement musicNoteMovement = new MusicNoteMovement(conductor, note, noteTravelDistance);
                     musicNote.addLateBehavior(musicNoteMovement, this);
                     musicNotes.add(musicNote);
-                    drawableManager.addGameObject(musicNote);
+                    drawableManager().addGameObject(musicNote);
                 });
 
                 songNameBox = new ContentBox(this, "Now Reviewing", "" + conductor.musicInfo.getSongName());
                 songNameBox.setTranslation(new Pointf(30f));
                 songNameBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
                 songNameBox.getStatDisplay().setFill(Colors.Snowy);
-                drawableManager.addUIElement(songNameBox);
+                drawableManager().addUIElement(songNameBox);
 
                 beatBox = new ContentBox(this, "Beat", "" + conductor.songPositionInBeats);
                 beatBox.setTranslation(new Pointf(30f, 50f));
                 beatBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
                 beatBox.getStatDisplay().setFill(Colors.Snowy);
-                drawableManager.addUIElement(beatBox);
+                drawableManager().addUIElement(beatBox);
 
                 Collection<Keys> laneKeys = conductor.musicInfo.getLaneKeys();
                 int laneKeyIncrement = 1;
@@ -258,17 +259,17 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                             .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
                             .setTranslation(laneStartingLocation);
                     keyCircles.add(keyCircle);
-                    drawableManager.addGameObject(keyCircle);
+                    drawableManager().addGameObject(keyCircle);
                     laneKeyIncrement++;
                 }
 
-                drawableManager.addGameObject(conductor);
+                drawableManager().addGameObject(conductor);
                 songInfo.resetNextIndex();
                 FastJEngine.getGameLoop().addEventObserver(this, ConductorFinishedEvent.class);
             }
             case Results -> {
                 if (editorState == EditorState.Recording) {
-                    inputManager.removeKeyboardActionListener(inputMatcher);
+                    inputManager().removeKeyboardActionListener(inputMatcher);
                 }
                 if (editorState == EditorState.Recording || editorState == EditorState.Review) {
                     if (keyCircles != null) {
@@ -297,7 +298,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                         beatBox = null;
                     }
 
-                    drawableManager.removeGameObject(conductor);
+                    drawableManager().removeGameObject(conductor);
                     conductor.setPaused(true);
                     conductor.destroy(this);
                     conductor = null;
@@ -314,9 +315,9 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                     });
                 } else {
                     SwingUtilities.invokeLater(() -> {
-                        List<Pair<Double, Integer>> recordedNotes = inputMatcher.getRecordedNotes();
-                        double[] notes = recordedNotes.stream().mapToDouble(Pair::getLeft).toArray();
-                        int[] noteLanes = recordedNotes.stream().mapToInt(Pair::getRight).toArray();
+                        List<RecordedNote> recordedNotes = inputMatcher.getRecordedNotes();
+                        double[] notes = recordedNotes.stream().mapToDouble(RecordedNote::note).toArray();
+                        int[] noteLanes = recordedNotes.stream().mapToInt(RecordedNote::noteLane).toArray();
 
                         editRecordedNotes(notes, noteLanes);
                     });
@@ -332,8 +333,8 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
         SpringLayout springLayout = new SpringLayout();
         recordingDataPanel.setLayout(springLayout);
 
-        Pair<JLabel, JLabel> infoLabelCombo = setupDoubleLabelCombo(recordingDataPanel, "Note Beat", "Note Lane");
-        List<Pair<JTextField, JTextField>> doubleInputCombos = new ArrayList<>();
+        LabelCombo infoLabelCombo = setupDoubleLabelCombo(recordingDataPanel, "Note Beat", "Note Lane");
+        List<FieldCombo> doubleInputCombos = new ArrayList<>();
         for (int i = 0; i < notes.length; i++) {
             doubleInputCombos.add(setupDoubleInputCombo(recordingDataPanel, notes[i], noteLanes[i]));
         }
@@ -343,7 +344,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
         JLabel resultsText = new JLabel("Recording was successful. Edit note beats and lanes below as needed.");
         JScrollPane scrollableDataPanel = new JScrollPane(recordingDataPanel);
         scrollableDataPanel.setPreferredSize(new Dimension(
-                infoLabelCombo.getLeft().getWidth() + infoLabelCombo.getRight().getWidth(),
+                infoLabelCombo.left().getWidth() + infoLabelCombo.right().getWidth(),
                 200
         ));
 
@@ -373,8 +374,8 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
             switch (resultChoice) {
                 case 0 -> {
                     for (int i = 0; i < doubleInputCombos.size(); i++) {
-                        notes[i] = Double.parseDouble(doubleInputCombos.get(i).getLeft().getText());
-                        noteLanes[i] = Integer.parseInt(doubleInputCombos.get(i).getRight().getText());
+                        notes[i] = Double.parseDouble(doubleInputCombos.get(i).left().getText());
+                        noteLanes[i] = Integer.parseInt(doubleInputCombos.get(i).right().getText());
                     }
                     songInfo.notes = notes;
                     songInfo.noteLanes = noteLanes;
@@ -407,12 +408,12 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                 }
                 case 1 -> {
                     for (int i = 0; i < doubleInputCombos.size(); i++) {
-                        notes[i] = Double.parseDouble(doubleInputCombos.get(i).getLeft().getText());
-                        noteLanes[i] = Integer.parseInt(doubleInputCombos.get(i).getRight().getText());
+                        notes[i] = Double.parseDouble(doubleInputCombos.get(i).left().getText());
+                        noteLanes[i] = Integer.parseInt(doubleInputCombos.get(i).right().getText());
                     }
                     songInfo.notes = notes;
                     songInfo.noteLanes = noteLanes;
-                    FastJEngine.runAfterRender(() -> changeState(EditorState.Review));
+                    FastJEngine.runLater(() -> changeState(EditorState.Review), CoreLoopState.Update);
                     return;
                 }
                 case 2 -> {
@@ -426,7 +427,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                     );
 
                     if (confirmRetry) {
-                        FastJEngine.runAfterRender(() -> changeState(EditorState.Setup));
+                        FastJEngine.runLater(() -> changeState(EditorState.Setup), CoreLoopState.Update);
                         return;
                     }
                 }
@@ -441,7 +442,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                     );
 
                     if (confirmReturn) {
-                        FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu));
+                        FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu), CoreLoopState.Update);
                         return;
                     }
                 }
@@ -456,11 +457,11 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
         AtomicBoolean hasJsonFile = new AtomicBoolean(false);
         AtomicReference<EditableSongInfo> editableSongInfoRef = new AtomicReference<>();
 
-        Pair<JLabel, JTextField> songNameCombo = setupInputCombo(songConfigPanel, "Song Name:");
-        Pair<JLabel, JTextField> bpmCombo = setupInputCombo(songConfigPanel, "BPM:");
-        Pair<JLabel, JTextField> beatPeekCombo = setupInputCombo(songConfigPanel, "Beats shown in advance:");
-        Pair<JLabel, JTextField> beatOffsetCombo = setupInputCombo(songConfigPanel, "Song Beat Offset:");
-        Pair<JLabel, JTextField> laneKeysCombo = setupInputCombo(songConfigPanel, "Lane Keys:");
+        LabeledField songNameCombo = setupInputCombo(songConfigPanel, "Song Name:");
+        LabeledField bpmCombo = setupInputCombo(songConfigPanel, "BPM:");
+        LabeledField beatPeekCombo = setupInputCombo(songConfigPanel, "Beats shown in advance:");
+        LabeledField beatOffsetCombo = setupInputCombo(songConfigPanel, "Song Beat Offset:");
+        LabeledField laneKeysCombo = setupInputCombo(songConfigPanel, "Lane Keys:");
         SpringUtilities.makeCompactGrid(songConfigPanel, 5, 2, 5, 5, 5, 5);
 
         JLabel musicPathLabel = new JLabel("Music Location:", JLabel.TRAILING);
@@ -496,16 +497,16 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                                 EditableSongInfo editableSongInfo = gson.fromJson(songInfoJson, EditableSongInfo.class);
                                 editableSongInfoRef.set(editableSongInfo);
                                 hasJsonFile.set(true);
-                                songNameCombo.getRight().setText(editableSongInfo.songName);
-                                bpmCombo.getRight().setText("" + editableSongInfo.bpm);
-                                beatPeekCombo.getRight().setText("" + editableSongInfo.beatPeekCount);
-                                beatOffsetCombo.getRight().setText("" + editableSongInfo.firstBeatOffset);
+                                songNameCombo.right().setText(editableSongInfo.songName);
+                                bpmCombo.right().setText("" + editableSongInfo.bpm);
+                                beatPeekCombo.right().setText("" + editableSongInfo.beatPeekCount);
+                                beatOffsetCombo.right().setText("" + editableSongInfo.firstBeatOffset);
                                 musicPathInput.setText(editableSongInfo.musicPath);
 
                                 String laneKeysString = editableSongInfo.getLaneKeys().stream()
                                         .map(Keys::name)
                                         .collect(Collectors.joining(","));
-                                laneKeysCombo.getRight().setText(laneKeysString);
+                                laneKeysCombo.right().setText(laneKeysString);
                             } catch (IOException exception) {
                                 displayException("Error while trying to load JSON file at \"" + path + "\"", exception);
                             }
@@ -519,16 +520,16 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
 
         if (songInfo != null) {
             editableSongInfoRef.set(songInfo);
-            songNameCombo.getRight().setText(songInfo.songName);
-            bpmCombo.getRight().setText("" + songInfo.bpm);
-            beatPeekCombo.getRight().setText("" + songInfo.beatPeekCount);
-            beatOffsetCombo.getRight().setText("" + songInfo.firstBeatOffset);
+            songNameCombo.right().setText(songInfo.songName);
+            bpmCombo.right().setText("" + songInfo.bpm);
+            beatPeekCombo.right().setText("" + songInfo.beatPeekCount);
+            beatOffsetCombo.right().setText("" + songInfo.firstBeatOffset);
             musicPathInput.setText(songInfo.musicPath);
 
             String laneKeysString = songInfo.getLaneKeys().stream()
                     .map(Keys::name)
                     .collect(Collectors.joining(","));
-            laneKeysCombo.getRight().setText(laneKeysString);
+            laneKeysCombo.right().setText(laneKeysString);
         }
 
         musicPathLabel.setLabelFor(musicPathInput);
@@ -541,9 +542,9 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
         DecimalVerifier decimalVerifier = new DecimalVerifier();
         IntegerVerifier integerVerifier = new IntegerVerifier();
 
-        bpmCombo.getRight().setInputVerifier(decimalVerifier);
-        beatOffsetCombo.getRight().setInputVerifier(decimalVerifier);
-        beatPeekCombo.getRight().setInputVerifier(integerVerifier);
+        bpmCombo.right().setInputVerifier(decimalVerifier);
+        beatOffsetCombo.right().setInputVerifier(decimalVerifier);
+        beatPeekCombo.right().setInputVerifier(integerVerifier);
 
         while (true) {
             boolean confirmation = DialogUtil.showConfirmationDialog(
@@ -566,7 +567,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                 );
 
                 if (confirmReturn) {
-                    FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu));
+                    FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu), CoreLoopState.Update);
                     return MainMenuSwitch;
                 } else {
                     continue;
@@ -594,11 +595,11 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                 }
             }
 
-            String songName = songNameCombo.getRight().getText().strip();
+            String songName = songNameCombo.right().getText().strip();
 
             double bpm;
             try {
-                bpm = Double.parseDouble(bpmCombo.getRight().getText().strip());
+                bpm = Double.parseDouble(bpmCombo.right().getText().strip());
             } catch (NumberFormatException exception) {
                 DialogUtil.showMessageDialog(DialogConfig.create().withPrompt("Couldn't parse BPM: " + exception.getMessage()).build());
                 return null;
@@ -606,7 +607,7 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
 
             int beatPeekCount;
             try {
-                beatPeekCount = Integer.parseInt(beatPeekCombo.getRight().getText().strip());
+                beatPeekCount = Integer.parseInt(beatPeekCombo.right().getText().strip());
             } catch (NumberFormatException exception) {
                 DialogUtil.showMessageDialog(DialogConfig.create().withPrompt("Couldn't parse beats shown in advance: " + exception.getMessage()).build());
                 return null;
@@ -614,13 +615,13 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
 
             double songBeatOffset;
             try {
-                songBeatOffset = Double.parseDouble(beatOffsetCombo.getRight().getText().strip());
+                songBeatOffset = Double.parseDouble(beatOffsetCombo.right().getText().strip());
             } catch (NumberFormatException exception) {
                 DialogUtil.showMessageDialog(DialogConfig.create().withPrompt("Couldn't parse song beat offset: " + exception.getMessage()).build());
                 return null;
             }
 
-            String laneKeysUnformatted = laneKeysCombo.getRight().getText().strip();
+            String laneKeysUnformatted = laneKeysCombo.right().getText().strip();
             TreeMap<Integer, Keys> laneKeys = new TreeMap<>();
 
             try {
@@ -702,14 +703,14 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
         return directory + file;
     }
 
-    private void constrainMusicPathUI(JPanel panel, SpringLayout layout, Pair<JLabel, JTextField> laneKeysCombo, JLabel label, JTextField input, JButton button) {
+    private void constrainMusicPathUI(JPanel panel, SpringLayout layout, LabeledField laneKeysCombo, JLabel label, JTextField input, JButton button) {
         layout.putConstraint(SpringLayout.WEST, label, 5, SpringLayout.WEST, panel);
-        layout.putConstraint(SpringLayout.NORTH, label, 5, SpringLayout.SOUTH, laneKeysCombo.getLeft());
-        layout.putConstraint(SpringLayout.EAST, label, 0, SpringLayout.EAST, laneKeysCombo.getLeft());
+        layout.putConstraint(SpringLayout.NORTH, label, 5, SpringLayout.SOUTH, laneKeysCombo.left());
+        layout.putConstraint(SpringLayout.EAST, label, 0, SpringLayout.EAST, laneKeysCombo.left());
 
         layout.putConstraint(SpringLayout.WEST, input, 5, SpringLayout.EAST, label);
-        layout.putConstraint(SpringLayout.NORTH, input, 5, SpringLayout.SOUTH, laneKeysCombo.getRight());
-        layout.putConstraint(SpringLayout.EAST, input, 0, SpringLayout.EAST, laneKeysCombo.getRight());
+        layout.putConstraint(SpringLayout.NORTH, input, 5, SpringLayout.SOUTH, laneKeysCombo.right());
+        layout.putConstraint(SpringLayout.EAST, input, 0, SpringLayout.EAST, laneKeysCombo.right());
 
         layout.putConstraint(SpringLayout.WEST, button, 5, SpringLayout.EAST, input);
         layout.putConstraint(SpringLayout.NORTH, button, 0, SpringLayout.NORTH, input);
@@ -719,38 +720,38 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
         layout.putConstraint(SpringLayout.EAST, panel, 5, SpringLayout.EAST, button);
     }
 
-    private Pair<JLabel, JTextField> setupInputCombo(JPanel songConfigPanel, String labelText) {
+    private LabeledField setupInputCombo(JPanel songConfigPanel, String labelText) {
         JLabel label = new JLabel(labelText, javax.swing.SwingConstants.TRAILING);
         JTextField input = new JTextField("", 25);
         label.setLabelFor(input);
         songConfigPanel.add(label);
         songConfigPanel.add(input);
 
-        return Pair.of(label, input);
+        return new LabeledField(label, input);
     }
 
-    private Pair<JLabel, JLabel> setupDoubleLabelCombo(JPanel songConfigPanel, String labelText1, String labelText2) {
+    private LabelCombo setupDoubleLabelCombo(JPanel songConfigPanel, String labelText1, String labelText2) {
         JLabel label1 = new JLabel(labelText1, SwingConstants.CENTER);
         JLabel label2 = new JLabel(labelText2, javax.swing.SwingConstants.CENTER);
         songConfigPanel.add(label1);
         songConfigPanel.add(label2);
 
-        return Pair.of(label1, label2);
+        return new LabelCombo(label1, label2);
     }
 
-    private Pair<JTextField, JTextField> setupDoubleInputCombo(JPanel songConfigPanel, double note, int noteLane) {
+    private FieldCombo setupDoubleInputCombo(JPanel songConfigPanel, double note, int noteLane) {
         JTextField noteField = new JTextField("" + note, 3);
         JTextField laneField = new JTextField("" + noteLane, 3);
         songConfigPanel.add(noteField);
         songConfigPanel.add(laneField);
 
-        return Pair.of(noteField, laneField);
+        return new FieldCombo(noteField, laneField);
     }
 
     @Override
     public void eventReceived(ConductorFinishedEvent event) {
         FastJEngine.log("Conductor finished. Processing results...");
-        FastJEngine.runAfterUpdate(() -> changeState(EditorState.Results));
+        FastJEngine.runLater(() -> changeState(EditorState.Results));
     }
 
     public static void displayException(String message, Exception exception) {
@@ -791,4 +792,8 @@ public class SongEditor extends Scene implements GameEventObserver<ConductorFini
                 .replace("]", "")
                 .trim();
     }
+
+    record LabelCombo(JLabel left, JLabel right) {}
+    record FieldCombo(JTextField left, JTextField right) {}
+    record LabeledField(JLabel left, JTextField right) {}
 }

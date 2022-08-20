@@ -1,8 +1,12 @@
 package tech.fastj.gj.scenes.game;
 
 import tech.fastj.engine.FastJEngine;
-import tech.fastj.math.Point;
-import tech.fastj.math.Pointf;
+import tech.fastj.gameloop.CoreLoopState;
+import tech.fastj.gj.ui.BetterButton;
+import tech.fastj.gj.util.Colors;
+import tech.fastj.gj.util.Fonts;
+import tech.fastj.gj.util.SceneNames;
+import tech.fastj.gj.util.Shapes;
 import tech.fastj.graphics.Drawable;
 import tech.fastj.graphics.dialog.DialogConfig;
 import tech.fastj.graphics.dialog.DialogOptions;
@@ -13,22 +17,17 @@ import tech.fastj.graphics.game.RenderStyle;
 import tech.fastj.graphics.game.Text2D;
 import tech.fastj.graphics.ui.UIElement;
 import tech.fastj.graphics.util.DrawUtil;
-
 import tech.fastj.input.mouse.events.MouseActionEvent;
-import tech.fastj.systems.control.Scene;
+import tech.fastj.math.Point;
+import tech.fastj.math.Pointf;
+import tech.fastj.systems.control.GameHandler;
 import tech.fastj.systems.control.SceneManager;
-import tech.fastj.systems.control.SimpleManager;
 
-import javax.swing.SwingUtilities;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 
-import tech.fastj.gj.ui.BetterButton;
-import tech.fastj.gj.util.Colors;
-import tech.fastj.gj.util.Fonts;
-import tech.fastj.gj.util.SceneNames;
-import tech.fastj.gj.util.Shapes;
+import javax.swing.SwingUtilities;
 
 public class PauseMenu extends UIElement<MouseActionEvent> {
 
@@ -67,7 +66,7 @@ public class PauseMenu extends UIElement<MouseActionEvent> {
         resumeButton.setTextColor(Colors.Snowy);
         resumeButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
-            FastJEngine.runAfterRender(() -> origin.changeState(GameState.Playing));
+            FastJEngine.runLater(() -> origin.changeState(GameState.Playing), CoreLoopState.Update);
         });
 
         mainMenuButton = new BetterButton(origin, backgroundScreen.getCenter().add(-100f, 125f), Shapes.ButtonSize);
@@ -89,14 +88,14 @@ public class PauseMenu extends UIElement<MouseActionEvent> {
                 );
 
                 if (confirmReturn) {
-                    FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu));
+                    FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu), CoreLoopState.Update);
                 }
             });
         });
 
-        origin.drawableManager.addUIElement(this);
-        origin.drawableManager.removeUIElement(resumeButton);
-        origin.drawableManager.removeUIElement(mainMenuButton);
+        origin.drawableManager().addUIElement(this);
+        origin.drawableManager().removeUIElement(resumeButton);
+        origin.drawableManager().removeUIElement(mainMenuButton);
 
         this.origin = origin;
     }
@@ -109,19 +108,19 @@ public class PauseMenu extends UIElement<MouseActionEvent> {
 
         if (shouldBeRendered) {
             if (resumeButton != null) {
-                origin.inputManager.addMouseActionListener(resumeButton);
+                origin.inputManager().addMouseActionListener(resumeButton);
             }
 
             if (mainMenuButton != null) {
-                origin.inputManager.addMouseActionListener(mainMenuButton);
+                origin.inputManager().addMouseActionListener(mainMenuButton);
             }
         } else {
             if (resumeButton != null) {
-                origin.inputManager.removeMouseActionListener(resumeButton);
+                origin.inputManager().removeMouseActionListener(resumeButton);
             }
 
             if (mainMenuButton != null) {
-                origin.inputManager.removeMouseActionListener(mainMenuButton);
+                origin.inputManager().removeMouseActionListener(mainMenuButton);
             }
         }
 
@@ -142,31 +141,7 @@ public class PauseMenu extends UIElement<MouseActionEvent> {
     }
 
     @Override
-    public void destroy(Scene origin) {
-        super.destroyTheRest(origin);
-        if (backgroundScreen != null) {
-            backgroundScreen.destroy(origin);
-            backgroundScreen = null;
-        }
-
-        if (pausedText != null) {
-            pausedText.destroy(origin);
-            pausedText = null;
-        }
-
-        if (resumeButton != null) {
-            resumeButton.destroy(origin);
-            resumeButton = null;
-        }
-
-        if (mainMenuButton != null) {
-            mainMenuButton.destroy(origin);
-            mainMenuButton = null;
-        }
-    }
-
-    @Override
-    public void destroy(SimpleManager origin) {
+    public void destroy(GameHandler origin) {
         super.destroyTheRest(origin);
         if (backgroundScreen != null) {
             backgroundScreen.destroy(origin);

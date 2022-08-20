@@ -1,6 +1,7 @@
 package tech.fastj.gj.scenes.information;
 
 import tech.fastj.engine.FastJEngine;
+import tech.fastj.gameloop.CoreLoopState;
 import tech.fastj.gj.ui.BetterButton;
 import tech.fastj.gj.ui.LinkText;
 import tech.fastj.gj.util.Colors;
@@ -15,7 +16,7 @@ import tech.fastj.math.Transform2D;
 import tech.fastj.systems.control.Scene;
 import tech.fastj.systems.control.SceneManager;
 
-import java.awt.*;
+import java.awt.Color;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -47,49 +48,49 @@ public class InformationMenu extends Scene {
                 .withFill(Colors.Snowy)
                 .withTransform(Pointf.subtract(center, 425f, 150f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
                 .build();
-        drawableManager.addGameObject(howToPlayHeader);
+        drawableManager().addGameObject(howToPlayHeader);
 
         controlsText = Text2D.create("When running a song, music notes will fall down from the top of the screen.")
                 .withFont(Fonts.SmallStatTextFontPlain)
                 .withFill(Colors.Snowy)
                 .withTransform(Pointf.subtract(center, 605f, 75f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
                 .build();
-        drawableManager.addGameObject(controlsText);
+        drawableManager().addGameObject(controlsText);
 
         gameAimText = Text2D.create("Time your key presses correctly to match when the note falls on the block.")
                 .withFont(Fonts.SmallStatTextFontPlain)
                 .withFill(Colors.Snowy)
                 .withTransform(Pointf.subtract(center, 605f, 50f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
                 .build();
-        drawableManager.addGameObject(gameAimText);
+        drawableManager().addGameObject(gameAimText);
 
         themeText = Text2D.create("Just one problem: you're limited by the delayed reaction of your speakers!")
                 .withFont(Fonts.SmallStatTextFontPlain)
                 .withFill(Colors.Snowy)
                 .withTransform(Pointf.subtract(center, 605f, 25f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
                 .build();
-        drawableManager.addGameObject(themeText);
+        drawableManager().addGameObject(themeText);
 
         sendoffText = Text2D.create("Try to keep up with the notes as they fall down.")
                 .withFont(Fonts.SmallStatTextFontPlain)
                 .withFill(Colors.Snowy)
                 .withTransform(Pointf.subtract(center, 605f, 0f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
                 .build();
-        drawableManager.addGameObject(sendoffText);
+        drawableManager().addGameObject(sendoffText);
 
         creditsHeader = Text2D.create("Credits")
                 .withFont(Fonts.SubtitleTextFont)
                 .withFill(Colors.Snowy)
                 .withTransform(Pointf.subtract(center, -225f, 150f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
                 .build();
-        drawableManager.addGameObject(creditsHeader);
+        drawableManager().addGameObject(creditsHeader);
 
         creditsText = Text2D.create("All content was made by lucasstarsz -- even the game engine!")
                 .withFont(Fonts.SmallStatTextFontPlain)
                 .withFill(Colors.Snowy)
                 .withTransform(Pointf.subtract(center, -80f, 75f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
                 .build();
-        drawableManager.addGameObject(creditsText);
+        drawableManager().addGameObject(creditsText);
 
         try {
             githubLink = new LinkText(this, "lucasstarsz's GitHub", new URL("https://github.com/lucasstarsz"));
@@ -113,7 +114,7 @@ public class InformationMenu extends Scene {
         mainMenuButton.setTextColor(Colors.Snowy);
         mainMenuButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
-            FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu));
+            FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu), CoreLoopState.Update);
         });
 
         Log.debug(InformationMenu.class, "loaded {}", getSceneName());

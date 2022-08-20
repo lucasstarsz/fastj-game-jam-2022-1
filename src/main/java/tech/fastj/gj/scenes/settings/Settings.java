@@ -1,17 +1,7 @@
 package tech.fastj.gj.scenes.settings;
 
 import tech.fastj.engine.FastJEngine;
-import tech.fastj.logging.Log;
-import tech.fastj.math.Pointf;
-import tech.fastj.math.Transform2D;
-import tech.fastj.graphics.display.FastJCanvas;
-import tech.fastj.graphics.game.Text2D;
-
-import tech.fastj.systems.control.Scene;
-import tech.fastj.systems.control.SceneManager;
-
-import java.awt.Color;
-
+import tech.fastj.gameloop.CoreLoopState;
 import tech.fastj.gj.ui.ArrowButton;
 import tech.fastj.gj.ui.BetterButton;
 import tech.fastj.gj.user.User;
@@ -19,6 +9,15 @@ import tech.fastj.gj.util.Colors;
 import tech.fastj.gj.util.Fonts;
 import tech.fastj.gj.util.SceneNames;
 import tech.fastj.gj.util.Shapes;
+import tech.fastj.graphics.display.FastJCanvas;
+import tech.fastj.graphics.game.Text2D;
+import tech.fastj.logging.Log;
+import tech.fastj.math.Pointf;
+import tech.fastj.math.Transform2D;
+import tech.fastj.systems.control.Scene;
+import tech.fastj.systems.control.SceneManager;
+
+import java.awt.Color;
 
 public class Settings extends Scene {
 
@@ -69,7 +68,7 @@ public class Settings extends Scene {
         mainMenuButton.setTextColor(Colors.Snowy);
         mainMenuButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
-            FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu));
+            FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu), CoreLoopState.Update);
         });
         Log.debug(Settings.class, "loaded {}", getSceneName());
     }

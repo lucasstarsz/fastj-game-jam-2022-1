@@ -1,17 +1,16 @@
 package tech.fastj.gj.rhythm;
 
 import tech.fastj.engine.FastJEngine;
-import tech.fastj.math.Pointf;
+import tech.fastj.gameloop.CoreLoopState;
 import tech.fastj.graphics.game.GameObject;
 import tech.fastj.graphics.util.DrawUtil;
-
+import tech.fastj.math.Pointf;
 import tech.fastj.systems.audio.Audio;
 import tech.fastj.systems.audio.AudioEvent;
 import tech.fastj.systems.audio.state.PlaybackState;
 import tech.fastj.systems.behaviors.Behavior;
 import tech.fastj.systems.behaviors.BehaviorHandler;
-import tech.fastj.systems.control.Scene;
-import tech.fastj.systems.control.SimpleManager;
+import tech.fastj.systems.control.GameHandler;
 
 import java.awt.Graphics2D;
 import java.nio.file.Path;
@@ -92,12 +91,7 @@ public class Conductor extends GameObject implements Behavior {
     }
 
     @Override
-    public void destroy(Scene origin) {
-        super.destroyTheRest(origin);
-    }
-
-    @Override
-    public void destroy(SimpleManager origin) {
+    public void destroy(GameHandler origin) {
         super.destroyTheRest(origin);
     }
 
@@ -123,10 +117,10 @@ public class Conductor extends GameObject implements Behavior {
     public void init(GameObject gameObject) {
         musicSource.getAudioEventListener().setAudioStopAction(event -> {
             if (FastJEngine.isRunning() && FastJEngine.getDisplay().getWindow().isShowing()) {
-                FastJEngine.runAfterRender(() -> {
+                FastJEngine.runLater(() -> {
                     FastJEngine.getGameLoop().removeEventObserver(musicSource.getAudioEventListener(), AudioEvent.class);
                     FastJEngine.getAudioManager().unloadStreamedAudio(musicSource.getID());
-                });
+                }, CoreLoopState.Update);
             } else {
                 FastJEngine.getGameLoop().removeEventObserver(musicSource.getAudioEventListener(), AudioEvent.class);
                 FastJEngine.getAudioManager().unloadStreamedAudio(musicSource.getID());
@@ -156,7 +150,7 @@ public class Conductor extends GameObject implements Behavior {
             isFinished = true;
             musicInfo.resetNextIndex();
             ConductorFinishedEvent event = new ConductorFinishedEvent(musicInfo.getNotesLength());
-            FastJEngine.runAfterRender(() -> FastJEngine.getGameLoop().fireEvent(event));
+            FastJEngine.runLater(() -> FastJEngine.getGameLoop().fireEvent(event), CoreLoopState.Update);
             return;
         }
 
@@ -177,7 +171,7 @@ public class Conductor extends GameObject implements Behavior {
         } else if (hasStarted && !isFinished && musicInfo.getNextIndex() >= musicInfo.getNotesLength() && musicSource.getCurrentPlaybackState() == PlaybackState.Stopped) {
             isFinished = true;
             ConductorFinishedEvent event = new ConductorFinishedEvent(musicInfo.getNotesLength());
-            FastJEngine.runAfterRender(() -> FastJEngine.getGameLoop().fireEvent(event));
+            FastJEngine.runLater(() -> FastJEngine.getGameLoop().fireEvent(event), CoreLoopState.Update);
         }
     }
 }

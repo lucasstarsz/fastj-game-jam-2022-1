@@ -1,7 +1,7 @@
 package tech.fastj.gj.scenes.game;
 
 import tech.fastj.engine.FastJEngine;
-import tech.fastj.gameloop.event.GameEventObserver;
+import tech.fastj.gameloop.event.EventObserver;
 import tech.fastj.gj.gameobjects.KeyCircle;
 import tech.fastj.gj.gameobjects.MusicNote;
 import tech.fastj.gj.rhythm.Conductor;
@@ -27,13 +27,14 @@ import tech.fastj.math.Pointf;
 import tech.fastj.systems.audio.state.PlaybackState;
 import tech.fastj.systems.control.Scene;
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class MainGame extends Scene implements GameEventObserver<ConductorFinishedEvent> {
+import javax.swing.SwingUtilities;
+
+public class MainGame extends Scene implements EventObserver<ConductorFinishedEvent> {
 
     private GameState gameState;
     private User user;
@@ -128,7 +129,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
         }
 
         if (pauseListener != null) {
-            inputManager.removeKeyboardActionListener(pauseListener);
+            inputManager().removeKeyboardActionListener(pauseListener);
             pauseListener = null;
         }
 
@@ -167,7 +168,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                     FastJEngine.getGameLoop().removeEventObserver(this, ConductorFinishedEvent.class);
                 }
 
-                FastJEngine.runAfterUpdate(() -> changeState(GameState.Playing));
+                FastJEngine.runLater(() -> changeState(GameState.Playing));
             }
             case Playing -> {
                 if (gameState == GameState.Intro) {
@@ -188,14 +189,14 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                         MusicNoteMovement musicNoteMovement = new MusicNoteMovement(conductor, note, noteTravelDistance);
                         musicNote.addLateBehavior(musicNoteMovement, this);
                         musicNotes.add(musicNote);
-                        drawableManager.addGameObject(musicNote);
+                        drawableManager().addGameObject(musicNote);
                     });
 
                     songNameBox = new ContentBox(this, "Now Playing", conductor.musicInfo.getSongName());
                     songNameBox.setTranslation(new Pointf(80f, 30f));
                     songNameBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
                     songNameBox.getStatDisplay().setFill(Colors.Snowy);
-                    drawableManager.addUIElement(songNameBox);
+                    drawableManager().addUIElement(songNameBox);
 
                     Collection<Keys> laneKeys = conductor.musicInfo.getLaneKeys();
                     int laneKeyIncrement = 1;
@@ -207,11 +208,11 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                                 .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
                                 .setTranslation(laneStartingLocation);
                         keyCircles.add(keyCircle);
-                        drawableManager.addGameObject(keyCircle);
+                        drawableManager().addGameObject(keyCircle);
                         laneKeyIncrement++;
                     }
 
-                    drawableManager.addGameObject(conductor);
+                    drawableManager().addGameObject(conductor);
 
                     GameInputMatcher inputMatcher = new GameInputMatcher(
                             conductor,
@@ -220,10 +221,10 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                                 Notice notice = new Notice(message, new Pointf(20f, 40f), this);
                                 notice.setFill("Perfect!".equalsIgnoreCase(message) ? Color.green : Color.red.brighter());
                                 notice.setFont(Fonts.StatTextFont);
-                                drawableManager.addGameObject(notice);
+                                drawableManager().addGameObject(notice);
                             }
                     );
-                    inputManager.addKeyboardActionListener(inputMatcher);
+                    inputManager().addKeyboardActionListener(inputMatcher);
                     inputMatcher.setOnLaneKeyPressed(event -> {
                         for (KeyCircle keyCircle : keyCircles) {
                             if (keyCircle.getKey() == event.getKey()) {
@@ -243,7 +244,7 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                         }
 
                         event.consume();
-                        FastJEngine.runAfterUpdate(() -> changeState(GameState.Paused));
+                        FastJEngine.runLater(() -> changeState(GameState.Paused));
                     });
 
                     pauseListener = new KeyboardActionListener() {
@@ -255,27 +256,27 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
 
                             if (event.getKey() == Keys.P || event.getKey() == Keys.Escape) {
                                 event.consume();
-                                FastJEngine.runAfterUpdate(() -> changeState(GameState.Paused));
+                                FastJEngine.runLater(() -> changeState(GameState.Paused));
                             }
                         }
                     };
                 } else if (gameState == GameState.Paused) {
                     pauseMenu.setShouldRender(false);
                     conductor.setPaused(false);
-                    inputManager.addMouseActionListener(pauseButton);
+                    inputManager().addMouseActionListener(pauseButton);
                 }
-                inputManager.addKeyboardActionListener(pauseListener);
+                inputManager().addKeyboardActionListener(pauseListener);
             }
             case Paused -> {
                 if (pauseMenu == null) {
                     pauseMenu = new PauseMenu(this);
-                    drawableManager.addUIElement(pauseMenu);
+                    drawableManager().addUIElement(pauseMenu);
                 }
 
                 conductor.setPaused(true);
                 pauseMenu.setShouldRender(true);
-                inputManager.removeKeyboardActionListener(pauseListener);
-                inputManager.removeMouseActionListener(pauseButton);
+                inputManager().removeKeyboardActionListener(pauseListener);
+                inputManager().removeMouseActionListener(pauseButton);
             }
             case Results -> {
                 if (keyCircles != null) {
@@ -300,8 +301,8 @@ public class MainGame extends Scene implements GameEventObserver<ConductorFinish
                 }
 
                 conductor.setPaused(true);
-                inputManager.removeKeyboardActionListener(pauseListener);
-                SwingUtilities.invokeLater(() -> FastJEngine.runAfterUpdate(() -> FastJEngine.getGameLoop().removeEventObserver(this, ConductorFinishedEvent.class)));
+                inputManager().removeKeyboardActionListener(pauseListener);
+                SwingUtilities.invokeLater(() -> FastJEngine.runLater(() -> FastJEngine.getGameLoop().removeEventObserver(this, ConductorFinishedEvent.class)));
             }
         }
         gameState = next;

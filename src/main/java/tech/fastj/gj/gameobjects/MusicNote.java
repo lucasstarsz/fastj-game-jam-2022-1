@@ -1,13 +1,10 @@
 package tech.fastj.gj.gameobjects;
 
-import tech.fastj.math.Point;
-import tech.fastj.math.Pointf;
 import tech.fastj.graphics.game.GameObject;
 import tech.fastj.graphics.util.DrawUtil;
-
-import tech.fastj.systems.collections.Pair;
-import tech.fastj.systems.control.Scene;
-import tech.fastj.systems.control.SimpleManager;
+import tech.fastj.graphics.util.PointsAndAlts;
+import tech.fastj.math.Pointf;
+import tech.fastj.systems.control.GameHandler;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -49,8 +46,8 @@ public class MusicNote extends GameObject {
     private final Path2D.Float musicNoteEmblem;
 
     public MusicNote(Pointf location, float size) {
-        Pair<Pointf[], Point[]> pathOutline = DrawUtil.createCircle(location.x, location.y, size);
-        setCollisionPath(DrawUtil.createPath(pathOutline.getLeft(), pathOutline.getRight()));
+        PointsAndAlts pathOutline = DrawUtil.createCircle(location.x, location.y, size);
+        setCollisionPath(DrawUtil.createPath(pathOutline.points(), pathOutline.altIndexes()));
 
         Pointf[] musicNoteEmblemMesh = new Pointf[MusicNoteEmblem.length];
         for (int i = 0; i < MusicNoteEmblem.length; i++) {
@@ -161,15 +158,7 @@ public class MusicNote extends GameObject {
     }
 
     @Override
-    public void destroy(Scene origin) {
-        fillPaint = DefaultFill;
-        outlineColor = DefaultOutlineColor;
-        outlineStroke = DefaultOutlineStroke;
-        super.destroyTheRest(origin);
-    }
-
-    @Override
-    public void destroy(SimpleManager origin) {
+    public void destroy(GameHandler origin) {
         fillPaint = DefaultFill;
         outlineColor = DefaultOutlineColor;
         outlineStroke = DefaultOutlineStroke;

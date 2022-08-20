@@ -1,20 +1,19 @@
 package tech.fastj.gj.scripts;
 
 import tech.fastj.engine.FastJEngine;
-import tech.fastj.math.Maths;
-import tech.fastj.math.Pointf;
-import tech.fastj.graphics.Boundary;
-import tech.fastj.graphics.game.GameObject;
-
-import tech.fastj.systems.behaviors.Behavior;
-import tech.fastj.systems.control.LogicManager;
-import tech.fastj.systems.control.SceneManager;
-import tech.fastj.systems.control.SimpleManager;
-
+import tech.fastj.gameloop.CoreLoopState;
 import tech.fastj.gj.rhythm.Conductor;
 import tech.fastj.gj.scenes.game.GameState;
 import tech.fastj.gj.scenes.game.MainGame;
 import tech.fastj.gj.util.ExtraMaths;
+import tech.fastj.graphics.Boundary;
+import tech.fastj.graphics.game.GameObject;
+import tech.fastj.math.Maths;
+import tech.fastj.math.Pointf;
+import tech.fastj.systems.behaviors.Behavior;
+import tech.fastj.systems.control.LogicManager;
+import tech.fastj.systems.control.SceneManager;
+import tech.fastj.systems.control.SimpleManager;
 
 public class MusicNoteMovement implements Behavior {
 
@@ -60,14 +59,14 @@ public class MusicNoteMovement implements Behavior {
         gameObject.setTranslation(lerpDistance);
 
         if (gameObject.getBound(Boundary.TopLeft).y > travelDistance + gameObject.height()) {
-            FastJEngine.runAfterRender(() -> {
+            FastJEngine.runLater(() -> {
                 LogicManager logicManager = FastJEngine.getLogicManager();
                 if (logicManager instanceof SceneManager sceneManager) {
                     gameObject.destroy(sceneManager.getCurrentScene());
                 } else if (logicManager instanceof SimpleManager simpleManager) {
                     gameObject.destroy(simpleManager);
                 }
-            });
+            }, CoreLoopState.Update);
         }
     }
 

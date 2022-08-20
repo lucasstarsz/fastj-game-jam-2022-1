@@ -1,6 +1,7 @@
 package tech.fastj.gj.scenes.mainmenu;
 
 import tech.fastj.engine.FastJEngine;
+import tech.fastj.gameloop.CoreLoopState;
 import tech.fastj.gj.FastJGameJam2022;
 import tech.fastj.gj.ui.BetterButton;
 import tech.fastj.gj.util.Colors;
@@ -18,7 +19,7 @@ import tech.fastj.systems.audio.MemoryAudio;
 import tech.fastj.systems.control.Scene;
 import tech.fastj.systems.control.SceneManager;
 
-import java.awt.*;
+import java.awt.Color;
 import java.io.IOException;
 
 public class MainMenu extends Scene {
@@ -45,7 +46,7 @@ public class MainMenu extends Scene {
                 .withFont(Fonts.TitleTextFont)
                 .withTransform(Pointf.subtract(center, 260f, 200f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
                 .build();
-        drawableManager.addGameObject(titleText);
+        drawableManager().addGameObject(titleText);
 
         playButton = new BetterButton(this, Pointf.subtract(center, 225f, 50f), Shapes.ButtonSize);
         playButton.setText("Play Game");
@@ -55,7 +56,7 @@ public class MainMenu extends Scene {
         playButton.setTextColor(Colors.Snowy);
         playButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
-            FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.SongPicker, false));
+            FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.SongPicker, false), CoreLoopState.Update);
         });
 
         infoButton = new BetterButton(this, Pointf.subtract(center, -25f, 50f), Shapes.ButtonSize);
@@ -66,7 +67,7 @@ public class MainMenu extends Scene {
         infoButton.setTextColor(Colors.Snowy);
         infoButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
-            FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.Information, false));
+            FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.Information, false), CoreLoopState.Update);
         });
 
         songEditorButton = new BetterButton(this, Pointf.subtract(center, 225f, -50f), Shapes.ButtonSize);
@@ -77,7 +78,7 @@ public class MainMenu extends Scene {
         songEditorButton.setTextColor(Colors.Snowy);
         songEditorButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
-            FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.SongEditor));
+            FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.SongEditor), CoreLoopState.Update);
         });
 
         settingsButton = new BetterButton(this, Pointf.subtract(center, -25f, -50f), Shapes.ButtonSize);
@@ -88,7 +89,7 @@ public class MainMenu extends Scene {
         settingsButton.setTextColor(Colors.Snowy);
         settingsButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
-            FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.Settings, false));
+            FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.Settings, false), CoreLoopState.Update);
         });
 
         exitButton = new BetterButton(this, Pointf.subtract(center, 100f, -150f), Shapes.ButtonSize);
@@ -99,7 +100,7 @@ public class MainMenu extends Scene {
         exitButton.setTextColor(Colors.Snowy);
         exitButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
-            FastJEngine.runAfterRender(FastJEngine.getDisplay()::close);
+            FastJEngine.runLater(FastJEngine.getDisplay()::close, CoreLoopState.Update);
         });
 
         mainMenuMusic = FastJEngine.getAudioManager().loadMemoryAudio(FilePaths.MainMenuMusic);

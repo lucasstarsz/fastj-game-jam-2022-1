@@ -1,10 +1,10 @@
 package tech.fastj.gj.rhythm;
 
+import tech.fastj.gameloop.event.Event;
+
 import java.util.Objects;
 
-import tech.fastj.gameloop.event.GameEvent;
-
-public class ConductorFinishedEvent extends GameEvent {
+public class ConductorFinishedEvent extends Event {
 
     private final int totalNotesOverall;
     private final int totalNotesHit;

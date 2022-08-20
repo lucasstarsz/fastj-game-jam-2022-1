@@ -2,15 +2,13 @@ package tech.fastj.gj.ui;
 
 import tech.fastj.graphics.ui.UIElement;
 import tech.fastj.graphics.util.DrawUtil;
-
 import tech.fastj.input.mouse.Mouse;
 import tech.fastj.input.mouse.MouseAction;
 import tech.fastj.input.mouse.MouseActionListener;
 import tech.fastj.input.mouse.MouseButtons;
 import tech.fastj.input.mouse.events.MouseButtonEvent;
 import tech.fastj.input.mouse.events.MouseMotionEvent;
-import tech.fastj.systems.control.Scene;
-import tech.fastj.systems.control.SimpleManager;
+import tech.fastj.systems.control.GameHandler;
 
 import java.awt.Color;
 import java.awt.Desktop;
@@ -57,7 +55,7 @@ public class LinkText extends UIElement<MouseButtonEvent> implements MouseAction
      *
      * @param origin The scene to add the button as a gui object to.
      */
-    public LinkText(Scene origin, String text, URL linkURL) {
+    public LinkText(GameHandler origin, String text, URL linkURL) {
         super(origin);
         this.linkURL = linkURL;
         super.setOnActionCondition(event -> Mouse.interactsWith(LinkText.this, MouseAction.Press) && Mouse.isMouseButtonPressed(MouseButtons.Left));
@@ -76,7 +74,7 @@ public class LinkText extends UIElement<MouseButtonEvent> implements MouseAction
         int textHeight = fm.getHeight();
         setCollisionPath(DrawUtil.createPath(DrawUtil.createBox(new Rectangle2D.Float(0, 0, textWidth, textHeight))));
 
-        origin.inputManager.addMouseActionListener(this);
+        origin.inputManager().addMouseActionListener(this);
     }
 
     /**
@@ -249,23 +247,13 @@ public class LinkText extends UIElement<MouseButtonEvent> implements MouseAction
     }
 
     @Override
-    public void destroy(Scene origin) {
+    public void destroy(GameHandler origin) {
         super.destroyTheRest(origin);
         text = DefaultText;
         font = DefaultFont;
         textColor = DefaultTextColor;
         hasMetrics = false;
-        origin.inputManager.removeMouseActionListener(this);
-    }
-
-    @Override
-    public void destroy(SimpleManager origin) {
-        super.destroyTheRest(origin);
-        text = DefaultText;
-        font = DefaultFont;
-        textColor = DefaultTextColor;
-        hasMetrics = false;
-        origin.inputManager.removeMouseActionListener(this);
+        origin.inputManager().removeMouseActionListener(this);
     }
 
     /**

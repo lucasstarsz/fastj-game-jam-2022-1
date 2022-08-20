@@ -1,19 +1,17 @@
 package tech.fastj.gj.ui;
 
-import tech.fastj.math.Maths;
-import tech.fastj.math.Pointf;
-import tech.fastj.math.Transform2D;
 import tech.fastj.graphics.ui.UIElement;
 import tech.fastj.graphics.util.DrawUtil;
-
 import tech.fastj.input.mouse.Mouse;
 import tech.fastj.input.mouse.MouseAction;
 import tech.fastj.input.mouse.MouseActionListener;
 import tech.fastj.input.mouse.MouseButtons;
 import tech.fastj.input.mouse.events.MouseButtonEvent;
 import tech.fastj.input.mouse.events.MouseMotionEvent;
-import tech.fastj.systems.control.Scene;
-import tech.fastj.systems.control.SimpleManager;
+import tech.fastj.math.Maths;
+import tech.fastj.math.Pointf;
+import tech.fastj.math.Transform2D;
+import tech.fastj.systems.control.GameHandler;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -52,16 +50,7 @@ public class PauseButton extends UIElement<MouseButtonEvent> implements MouseAct
      *
      * @param origin The scene to add the button as a gui object to.
      */
-    public PauseButton(Scene origin) {
-        this(origin, Transform2D.DefaultTranslation, DefaultSize);
-    }
-
-    /**
-     * Constructs a button with a default location and size.
-     *
-     * @param origin The simple manager to add the button as a gui object to.
-     */
-    public PauseButton(SimpleManager origin) {
+    public PauseButton(GameHandler origin) {
         this(origin, Transform2D.DefaultTranslation, DefaultSize);
     }
 
@@ -72,7 +61,7 @@ public class PauseButton extends UIElement<MouseButtonEvent> implements MouseAct
      * @param location    The location to create the button at.
      * @param initialSize The initial size of the button, though the button will get larger if the text outgrows it.
      */
-    public PauseButton(Scene origin, Pointf location, Pointf initialSize) {
+    public PauseButton(GameHandler origin, Pointf location, Pointf initialSize) {
         super(origin);
         if (initialSize.x < Maths.FloatPrecision || initialSize.y < Maths.FloatPrecision) {
             throw new IllegalArgumentException(
@@ -94,40 +83,7 @@ public class PauseButton extends UIElement<MouseButtonEvent> implements MouseAct
         this.onExitHoverEvents = new ArrayList<>();
 
         translate(location);
-        origin.inputManager.addMouseActionListener(this);
-    }
-
-    /**
-     * Constructs a button with the specified location and initial size.
-     *
-     * @param origin      The simple manager to add the button as a gui object to.
-     * @param location    The location to create the button at.
-     * @param initialSize The initial size of the button, though the button will get larger if the text outgrows it.
-     */
-    public PauseButton(SimpleManager origin, Pointf location, Pointf initialSize) {
-        super(origin);
-        if (initialSize.x < Maths.FloatPrecision || initialSize.y < Maths.FloatPrecision) {
-            throw new IllegalArgumentException(
-                    "The size " + initialSize + " is too small." +
-                            System.lineSeparator() +
-                            "The minimum size in both x and y directions is " + Maths.FloatPrecision + "."
-            );
-        }
-
-        super.setOnActionCondition(event -> Mouse.interactsWith(PauseButton.this, MouseAction.Press) && Mouse.isMouseButtonPressed(MouseButtons.Left));
-
-        Pointf[] buttonCoords = DrawUtil.createBox(Pointf.origin(), initialSize);
-        super.setCollisionPath(DrawUtil.createPath(buttonCoords));
-
-        this.paint = DefaultFill;
-        this.outlineStroke = DefaultOutlineStroke;
-        this.outlineColor = DefaultOutlineColor;
-        this.onEnterHoverEvents = new ArrayList<>();
-        this.onExitHoverEvents = new ArrayList<>();
-
-        translate(location);
-
-        origin.inputManager.addMouseActionListener(this);
+        origin.inputManager().addMouseActionListener(this);
     }
 
     /**
@@ -313,21 +269,12 @@ public class PauseButton extends UIElement<MouseButtonEvent> implements MouseAct
     }
 
     @Override
-    public void destroy(Scene origin) {
+    public void destroy(GameHandler origin) {
         super.destroyTheRest(origin);
         paint = DefaultFill;
         outlineColor = DefaultOutlineColor;
         outlineStroke = DefaultOutlineStroke;
-        origin.inputManager.removeMouseActionListener(this);
-    }
-
-    @Override
-    public void destroy(SimpleManager origin) {
-        super.destroyTheRest(origin);
-        paint = DefaultFill;
-        outlineColor = DefaultOutlineColor;
-        outlineStroke = DefaultOutlineStroke;
-        origin.inputManager.removeMouseActionListener(this);
+        origin.inputManager().removeMouseActionListener(this);
     }
 
     /**

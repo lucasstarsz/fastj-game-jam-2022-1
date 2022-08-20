@@ -1,20 +1,17 @@
 package tech.fastj.gj.gameobjects;
 
 import tech.fastj.engine.FastJEngine;
-import tech.fastj.math.Maths;
-import tech.fastj.math.Point;
-import tech.fastj.math.Pointf;
 import tech.fastj.graphics.game.GameObject;
 import tech.fastj.graphics.util.DrawUtil;
-
+import tech.fastj.graphics.util.PointsAndAlts;
 import tech.fastj.input.keyboard.KeyboardActionListener;
 import tech.fastj.input.keyboard.Keys;
 import tech.fastj.input.keyboard.events.KeyboardStateEvent;
+import tech.fastj.math.Maths;
+import tech.fastj.math.Pointf;
 import tech.fastj.systems.behaviors.Behavior;
 import tech.fastj.systems.behaviors.BehaviorHandler;
-import tech.fastj.systems.collections.Pair;
-import tech.fastj.systems.control.Scene;
-import tech.fastj.systems.control.SimpleManager;
+import tech.fastj.systems.control.GameHandler;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -45,8 +42,8 @@ public class KeyCircle extends GameObject implements KeyboardActionListener, Beh
     private final Font font;
 
     public KeyCircle(Keys key, float radius, String fontName, BehaviorHandler handler) {
-        Pair<Pointf[], Point[]> circleMesh = DrawUtil.createCircle(0f, radius, radius);
-        setCollisionPath(DrawUtil.createPath(circleMesh.getLeft(), circleMesh.getRight()));
+        PointsAndAlts circleMesh = DrawUtil.createCircle(0f, radius, radius);
+        setCollisionPath(DrawUtil.createPath(circleMesh.points(), circleMesh.altIndexes()));
 
         this.key = key;
         this.font = new Font(fontName, Font.BOLD, 12);
@@ -165,7 +162,7 @@ public class KeyCircle extends GameObject implements KeyboardActionListener, Beh
     @Override
     public void update(GameObject gameObject) {
         if (!fillColor.equals(baseColor)) {
-            deltaTimeBuildup = Maths.withinRange(deltaTimeBuildup + (FastJEngine.getDeltaTime() / 10f), 0f, 1f);
+            deltaTimeBuildup = Maths.clamp(deltaTimeBuildup + (FastJEngine.getDeltaTime() / 10f), 0f, 1f);
             fillColor = DrawUtil.colorLerp(fillColor, baseColor, deltaTimeBuildup);
         }
     }
@@ -199,20 +196,11 @@ public class KeyCircle extends GameObject implements KeyboardActionListener, Beh
     }
 
     @Override
-    public void destroy(Scene origin) {
+    public void destroy(GameHandler origin) {
         fillColor = DefaultFill;
         outlineColor = DefaultOutlineColor;
         outlineStroke = DefaultOutlineStroke;
-        origin.inputManager.removeKeyboardActionListener(this);
-        super.destroyTheRest(origin);
-    }
-
-    @Override
-    public void destroy(SimpleManager origin) {
-        fillColor = DefaultFill;
-        outlineColor = DefaultOutlineColor;
-        outlineStroke = DefaultOutlineStroke;
-        origin.inputManager.removeKeyboardActionListener(this);
+        origin.inputManager().removeKeyboardActionListener(this);
         super.destroyTheRest(origin);
     }
 }

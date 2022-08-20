@@ -1,13 +1,11 @@
 package tech.fastj.gj.rhythm;
 
 import tech.fastj.engine.FastJEngine;
-import tech.fastj.math.Maths;
-
 import tech.fastj.input.keyboard.KeyboardActionListener;
 import tech.fastj.input.keyboard.Keys;
 import tech.fastj.input.keyboard.events.KeyboardStateEvent;
+import tech.fastj.math.Maths;
 import tech.fastj.systems.audio.state.PlaybackState;
-import tech.fastj.systems.collections.Pair;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -21,7 +19,7 @@ public final class EditorInputMatcher implements KeyboardActionListener {
     private final Set<Double> consumedNotes;
     private final Conductor conductor;
     private final EditableSongInfo songInfo;
-    private final List<Pair<Double, Integer>> recordedNotes;
+    private final List<RecordedNote> recordedNotes;
     private BiConsumer<KeyboardStateEvent, Double> onLaneKeyPressed;
 
     public EditorInputMatcher(Conductor conductor, EditableSongInfo songInfo) {
@@ -72,12 +70,12 @@ public final class EditorInputMatcher implements KeyboardActionListener {
         }
 
         consumedNotes.add(adjustedBeatPosition);
-        recordedNotes.add(Pair.of(adjustedBeatPosition, songInfo.getKeyLane(inputKey)));
+        recordedNotes.add(new RecordedNote(adjustedBeatPosition, songInfo.getKeyLane(inputKey)));
 
         return adjustedBeatPosition;
     }
 
-    public List<Pair<Double, Integer>> getRecordedNotes() {
+    public List<RecordedNote> getRecordedNotes() {
         return recordedNotes;
     }
 

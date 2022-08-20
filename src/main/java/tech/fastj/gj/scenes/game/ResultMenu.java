@@ -1,24 +1,7 @@
 package tech.fastj.gj.scenes.game;
 
 import tech.fastj.engine.FastJEngine;
-import tech.fastj.math.Point;
-import tech.fastj.math.Pointf;
-import tech.fastj.math.Transform2D;
-import tech.fastj.graphics.game.Polygon2D;
-import tech.fastj.graphics.game.RenderStyle;
-import tech.fastj.graphics.game.Text2D;
-import tech.fastj.graphics.ui.UIElement;
-import tech.fastj.graphics.util.DrawUtil;
-
-import tech.fastj.input.mouse.events.MouseActionEvent;
-import tech.fastj.systems.control.Scene;
-import tech.fastj.systems.control.SceneManager;
-import tech.fastj.systems.control.SimpleManager;
-
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.geom.AffineTransform;
-
+import tech.fastj.gameloop.CoreLoopState;
 import tech.fastj.gj.rhythm.ConductorFinishedEvent;
 import tech.fastj.gj.ui.BetterButton;
 import tech.fastj.gj.ui.ContentBox;
@@ -26,6 +9,21 @@ import tech.fastj.gj.util.Colors;
 import tech.fastj.gj.util.Fonts;
 import tech.fastj.gj.util.SceneNames;
 import tech.fastj.gj.util.Shapes;
+import tech.fastj.graphics.game.Polygon2D;
+import tech.fastj.graphics.game.RenderStyle;
+import tech.fastj.graphics.game.Text2D;
+import tech.fastj.graphics.ui.UIElement;
+import tech.fastj.graphics.util.DrawUtil;
+import tech.fastj.input.mouse.events.MouseActionEvent;
+import tech.fastj.math.Point;
+import tech.fastj.math.Pointf;
+import tech.fastj.math.Transform2D;
+import tech.fastj.systems.control.GameHandler;
+import tech.fastj.systems.control.SceneManager;
+
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
 
 public class ResultMenu extends UIElement<MouseActionEvent> {
 
@@ -78,11 +76,11 @@ public class ResultMenu extends UIElement<MouseActionEvent> {
 
         playAgainButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
-            FastJEngine.runAfterRender(() -> origin.changeState(GameState.Intro));
+            FastJEngine.runLater(() -> origin.changeState(GameState.Intro), CoreLoopState.Update);
         });
         mainMenuButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
-            FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu));
+            FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu), CoreLoopState.Update);
         });
 
         origin.drawableManager.removeUIElement(playAgainButton);
@@ -135,7 +133,7 @@ public class ResultMenu extends UIElement<MouseActionEvent> {
             quitGameButton.setTextColor(Colors.Snowy);
             quitGameButton.setOnAction(mouseButtonEvent -> {
                 mouseButtonEvent.consume();
-                FastJEngine.runAfterRender(FastJEngine.getDisplay()::close);
+                FastJEngine.runLater(FastJEngine.getDisplay()::close, CoreLoopState.Update);
             });
         }
     }
@@ -158,51 +156,7 @@ public class ResultMenu extends UIElement<MouseActionEvent> {
     }
 
     @Override
-    public void destroy(Scene origin) {
-        super.destroyTheRest(origin);
-        if (alphaScreen != null) {
-            alphaScreen.destroy(origin);
-            alphaScreen = null;
-        }
-
-        if (backgroundScreen != null) {
-            backgroundScreen.destroy(origin);
-            backgroundScreen = null;
-        }
-
-        if (gameEndText != null) {
-            gameEndText.destroy(origin);
-            gameEndText = null;
-        }
-
-        if (scoreBox != null) {
-            scoreBox.destroy(origin);
-            scoreBox = null;
-        }
-
-        if (blocksStackedBox != null) {
-            blocksStackedBox.destroy(origin);
-            blocksStackedBox = null;
-        }
-
-        if (playAgainButton != null) {
-            playAgainButton.destroy(origin);
-            playAgainButton = null;
-        }
-
-        if (mainMenuButton != null) {
-            mainMenuButton.destroy(origin);
-            mainMenuButton = null;
-        }
-
-        if (quitGameButton != null) {
-            quitGameButton.destroy(origin);
-            quitGameButton = null;
-        }
-    }
-
-    @Override
-    public void destroy(SimpleManager origin) {
+    public void destroy(GameHandler origin) {
         super.destroyTheRest(origin);
         if (alphaScreen != null) {
             alphaScreen.destroy(origin);

@@ -1,17 +1,17 @@
 package tech.fastj.gj.ui;
 
 import tech.fastj.engine.FastJEngine;
+import tech.fastj.gameloop.CoreLoopState;
+import tech.fastj.gj.util.ExtraMaths;
+import tech.fastj.graphics.game.GameObject;
 import tech.fastj.math.Maths;
 import tech.fastj.math.Pointf;
 import tech.fastj.math.Transform2D;
-import tech.fastj.graphics.game.GameObject;
-
 import tech.fastj.systems.behaviors.Behavior;
 import tech.fastj.systems.behaviors.BehaviorHandler;
+import tech.fastj.systems.control.GameHandler;
 import tech.fastj.systems.control.LogicManager;
-import tech.fastj.systems.control.Scene;
 import tech.fastj.systems.control.SceneManager;
-import tech.fastj.systems.control.SimpleManager;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -22,8 +22,6 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Objects;
-
-import tech.fastj.gj.util.ExtraMaths;
 
 public class Notice extends GameObject implements Behavior {
 
@@ -146,17 +144,7 @@ public class Notice extends GameObject implements Behavior {
     }
 
     @Override
-    public void destroy(Scene origin) {
-        text = DefaultText;
-        fillColor = DefaultFill;
-        font = DefaultFont;
-        hasMetrics = false;
-
-        super.destroyTheRest(origin);
-    }
-
-    @Override
-    public void destroy(SimpleManager origin) {
+    public void destroy(GameHandler origin) {
         text = DefaultText;
         fillColor = DefaultFill;
         font = DefaultFont;
@@ -243,14 +231,14 @@ public class Notice extends GameObject implements Behavior {
     @Override
     public void update(GameObject gameObject) {
         if (fillColor.getAlpha() - 1 == 0) {
-            FastJEngine.runAfterRender(() -> {
+            FastJEngine.runLater(() -> {
                 LogicManager logicManager = FastJEngine.getLogicManager();
                 if (logicManager instanceof SceneManager sceneManager) {
                     gameObject.destroy(sceneManager.getCurrentScene());
-                } else if (logicManager instanceof SimpleManager simpleManager) {
+                } else if (logicManager instanceof GameHandler simpleManager) {
                     gameObject.destroy(simpleManager);
                 }
-            });
+            }, CoreLoopState.Update);
         } else {
             Color moreTransparentColor = new Color(fillColor.getRed(), fillColor.getGreen(), fillColor.getBlue(), fillColor.getAlpha() - 1);
             setFill(moreTransparentColor);

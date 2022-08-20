@@ -2,6 +2,7 @@ package tech.fastj.gj.scenes.songpicker;
 
 import com.google.gson.Gson;
 import tech.fastj.engine.FastJEngine;
+import tech.fastj.gameloop.CoreLoopState;
 import tech.fastj.gj.GameManager;
 import tech.fastj.gj.rhythm.SongInfo;
 import tech.fastj.gj.scenes.game.MainGame;
@@ -64,7 +65,7 @@ public class SongPicker extends Scene {
         playStackAttackButton.setTextColor(Colors.Snowy);
         playStackAttackButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
-            FastJEngine.runAfterRender(() -> {
+            FastJEngine.runLater(() -> {
                 try {
                     String json = Files.readString(FilePaths.StackAttackJson);
                     Gson gson = new Gson();
@@ -80,7 +81,7 @@ public class SongPicker extends Scene {
                 } catch (IOException exception) {
                     throw new RuntimeException(exception);
                 }
-            });
+            }, CoreLoopState.Update);
         });
 
         playLadybirdButton = new BetterButton(this, Pointf.subtract(center, -25f, 50f), Shapes.ButtonSize);
@@ -91,7 +92,7 @@ public class SongPicker extends Scene {
         playLadybirdButton.setTextColor(Colors.Snowy);
         playLadybirdButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
-            FastJEngine.runAfterRender(() -> {
+            FastJEngine.runLater(() -> {
                 try {
                     String json = Files.readString(FilePaths.LadybirdJson);
                     Gson gson = new Gson();
@@ -108,7 +109,7 @@ public class SongPicker extends Scene {
                 } catch (IOException exception) {
                     throw new RuntimeException(exception);
                 }
-            });
+            }, CoreLoopState.Update);
         });
 
         playCustomButton = new BetterButton(this, Pointf.subtract(center, 225f, -50f), Shapes.ButtonSize);
@@ -132,7 +133,7 @@ public class SongPicker extends Scene {
                 return;
             }
 
-            FastJEngine.runAfterRender(() -> {
+            FastJEngine.runLater(() -> {
                 GameManager sceneManager = FastJEngine.getLogicManager();
 
                 Scene mainMenuScene = sceneManager.getScene(SceneNames.MainMenu);
@@ -141,7 +142,7 @@ public class SongPicker extends Scene {
 
                 sceneManager.<MainGame>getScene(SceneNames.Game).setSongInfo(customSong);
                 sceneManager.switchScenes(SceneNames.Game);
-            });
+            }, CoreLoopState.Update);
         });
 
         browseCustomButton = new BetterButton(this, Pointf.subtract(center, -25f, -50f), Shapes.ButtonSize);
@@ -195,7 +196,7 @@ public class SongPicker extends Scene {
         mainMenuButton.setTextColor(Colors.Snowy);
         mainMenuButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
-            FastJEngine.runAfterRender(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu));
+            FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu), CoreLoopState.Update);
         });
 
         Log.debug(SongPicker.class, "loaded {}", getSceneName());
