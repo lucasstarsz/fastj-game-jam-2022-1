@@ -112,7 +112,7 @@ public class SongPicker extends Scene {
         playCustomButton.setOnAction(mouseButtonEvent -> {
             mouseButtonEvent.consume();
 
-            if (customSongInfo == null) {
+            if (customSong == null) {
                 SwingUtilities.invokeLater(() -> DialogUtil.showMessageDialog(
                     DialogConfig.create()
                         .withTitle("No Custom Song Loaded")
@@ -173,6 +173,9 @@ public class SongPicker extends Scene {
         customSongInfo.setFill(Colors.Snowy);
         customSongInfo.setTranslation(Pointf.subtract(center, 225f, -125f));
         drawableManager().addGameObject(customSongInfo);
+        if (customSong != null) {
+            setCustomSong(customSong);
+        }
 
         BetterButton mainMenuButton = new BetterButton(this, Pointf.subtract(center, 100f, -175f), Shapes.ButtonSize);
         mainMenuButton.setText("Back");
@@ -189,9 +192,10 @@ public class SongPicker extends Scene {
     }
 
     private void setCustomSong(SongInfo songInfo) {
-        if (customSong != null && customSong.equals(songInfo)) {
+        if (songInfo == null) {
             return;
         }
+
         customSong = songInfo;
         customSongInfo.setText("Custom Song: " + customSong.getSongName());
     }
