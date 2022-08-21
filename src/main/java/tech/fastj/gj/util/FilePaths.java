@@ -8,7 +8,7 @@ public class FilePaths {
 
     public static final Path StackAttackJson = Path.of("json/Stack Attack.json");
     public static final Path LadybirdJson = Path.of("json/Ladybird.json");
-    public static final Path MainMenuMusic = Path.of("audio/Letter_to_the_Hand_Man-Percussion.wav");
+    public static final Path MainMenuMusic = Path.of("audio/Letter_to_the_Hand_Man-Percussion.ogg");
 
     public static final InputStream NotoSansRegular = streamResource("/notosans/NotoSans-Regular.ttf");
     public static final InputStream NotoSansBold = streamResource("/notosans/NotoSans-Bold.ttf");
