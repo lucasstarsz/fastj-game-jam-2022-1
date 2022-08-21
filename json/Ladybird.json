@@ -274,5 +274,5 @@
     "nextIndex": 0,
     "beatPeekCount": 4,
     "firstBeatOffset": -1.0,
-    "musicPath": "audio\\Ladybird.ogg"
+    "musicPath": "audio/Ladybird.ogg"
 }

@@ -1,6 +1,5 @@
 package tech.fastj.gj.scenes.editor;
 
-import com.google.gson.Gson;
 import tech.fastj.engine.FastJEngine;
 import tech.fastj.gameloop.CoreLoopState;
 import tech.fastj.gameloop.event.EventObserver;
@@ -34,8 +33,11 @@ import tech.fastj.math.Pointf;
 import tech.fastj.systems.control.Scene;
 import tech.fastj.systems.control.SceneManager;
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FileDialog;
+import java.awt.Font;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -49,7 +51,20 @@ import java.util.List;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.SpringLayout;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+
+import com.google.gson.Gson;
 
 public class SongEditor extends Scene implements EventObserver<ConductorFinishedEvent> {
 
@@ -72,8 +87,22 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
     @Override
     public void load(FastJCanvas canvas) {
         Log.debug(SongEditor.class, "loading {}", getSceneName());
+
+        resetConductor(canvas);
+        createUI();
+        createListeners();
         changeState(EditorState.Setup);
+
         Log.debug(SongEditor.class, "loaded {}", getSceneName());
+    }
+
+    private void createUI() {
+    }
+
+    private void createListeners() {
+    }
+
+    private void resetConductor(FastJCanvas canvas) {
     }
 
     @Override
@@ -112,10 +141,6 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
     }
 
     @Override
-    public void fixedUpdate(FastJCanvas canvas) {
-    }
-
-    @Override
     public void update(FastJCanvas canvas) {
         if (editorState == EditorState.Recording || editorState == EditorState.Review) {
             double inputBeatPosition = conductor.songPositionInBeats;
@@ -150,7 +175,8 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
                     do {
                         editableSongInfo = setupSongInfo();
 
-                        if (editableSongInfo == null && !FastJEngine.<SceneManager>getLogicManager().getCurrentScene().getSceneName().equals(this.getSceneName())) {
+                        if (editableSongInfo == null && !FastJEngine.<SceneManager>getLogicManager().getCurrentScene().getSceneName()
+                            .equals(this.getSceneName())) {
                             return;
                         } else if (editableSongInfo != null && editableSongInfo.equals(MainMenuSwitch)) {
                             return;
@@ -188,9 +214,9 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
                 for (Keys laneKey : laneKeys) {
                     Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x) + (laneKeyIncrement * Shapes.NoteSize * 2.5f), canvas.getResolution().y - (Shapes.NoteSize * 4f));
                     KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma", this)
-                            .setFill(Color.gray)
-                            .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
-                            .setTranslation(laneStartingLocation);
+                        .setFill(Color.gray)
+                        .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
+                        .setTranslation(laneStartingLocation);
                     keyCircles.add(keyCircle);
                     drawableManager().addGameObject(keyCircle);
                     laneKeyIncrement++;
@@ -206,7 +232,8 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
                             keyCircle.setFill(Color.white, false);
 
                             if (beat != -1) {
-                                Notice notice = new Notice("'" + event.getKey().name() + "' key at beat " + beat, new Pointf(100f, 50f), this);
+                                Notice notice = new Notice("'" + event.getKey()
+                                    .name() + "' key at beat " + beat, new Pointf(100f, 50f), this);
                                 notice.setFill(Color.black);
                                 notice.setFont(Fonts.StatTextFont);
                                 drawableManager().addGameObject(notice);
@@ -227,8 +254,8 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
                     FastJEngine.log("spawn music note");
                     Pointf noteStartingLocation = new Pointf((canvas.getCanvasCenter().x) + (noteLane * Shapes.NoteSize * 2.5f), -Shapes.NoteSize / 2f);
                     MusicNote musicNote = new MusicNote(noteStartingLocation, Shapes.NoteSize)
-                            .setFill(DrawUtil.randomColor())
-                            .setOutline(MusicNote.DefaultOutlineStroke, DrawUtil.randomColor());
+                        .setFill(DrawUtil.randomColor())
+                        .setOutline(MusicNote.DefaultOutlineStroke, DrawUtil.randomColor());
 
                     double noteTravelDistance = canvas.getResolution().y - (Shapes.NoteSize * 4f);
                     MusicNoteMovement musicNoteMovement = new MusicNoteMovement(conductor, note, noteTravelDistance);
@@ -255,9 +282,9 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
                 for (Keys laneKey : laneKeys) {
                     Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x) + (laneKeyIncrement * Shapes.NoteSize * 2.5f), canvas.getResolution().y - (Shapes.NoteSize * 4f));
                     KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma", this)
-                            .setFill(Color.gray)
-                            .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
-                            .setTranslation(laneStartingLocation);
+                        .setFill(Color.gray)
+                        .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
+                        .setTranslation(laneStartingLocation);
                     keyCircles.add(keyCircle);
                     drawableManager().addGameObject(keyCircle);
                     laneKeyIncrement++;
@@ -344,8 +371,8 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
         JLabel resultsText = new JLabel("Recording was successful. Edit note beats and lanes below as needed.");
         JScrollPane scrollableDataPanel = new JScrollPane(recordingDataPanel);
         scrollableDataPanel.setPreferredSize(new Dimension(
-                infoLabelCombo.left().getWidth() + infoLabelCombo.right().getWidth(),
-                200
+            infoLabelCombo.left().getWidth() + infoLabelCombo.right().getWidth(),
+            200
         ));
 
         JPanel resultsPanel = new JPanel();
@@ -361,14 +388,14 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
             String[] resultOptions = {"Export", "Review Playback", "Reset Notes", "Exit"};
 
             int resultChoice = DialogUtil.showOptionDialog(
-                    DialogConfig.create()
-                            .withTitle("Recording Successful")
-                            .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                            .withPrompt(resultsPanel)
-                            .build(),
-                    DialogMessageTypes.Question,
-                    resultOptions,
-                    resultOptions[0]
+                DialogConfig.create()
+                    .withTitle("Recording Successful")
+                    .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                    .withPrompt(resultsPanel)
+                    .build(),
+                DialogMessageTypes.Question,
+                resultOptions,
+                resultOptions[0]
             );
 
             switch (resultChoice) {
@@ -384,23 +411,31 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
                     Gson gson = new Gson();
                     String songInfoJson = gson.toJson(songInfo);
 
-                    String path = browseForPath(
-                            "Choose a location to save your song info file.",
-                            FileDialog.SAVE,
-                            songInfo.musicPath.substring(Math.max(0, songInfo.musicPath.lastIndexOf(File.separator)), songInfo.musicPath.lastIndexOf(".wav"))
+                    String path = browseForPath("Choose a location to save your song file.", FileDialog.SAVE,
+                        songInfo.musicPath.substring(Math.max(0, songInfo.musicPath.lastIndexOf(File.separator)), songInfo.musicPath.lastIndexOf(".")),
+                        (directory, file) -> {
+                            if (file == null) {
+                                return null;
+                            }
+
+                            return directory + file + (file.endsWith(".json") ? "" : ".json");
+                        },
+                        true
                     );
 
                     if (path != null) {
                         try {
+                            System.out.println(path);
+                            path = path.replace('\\', '/');
+                            System.out.println(path);
                             Files.writeString(Path.of(path), songInfoJson, StandardCharsets.UTF_8);
                             DialogUtil.showMessageDialog(
-                                    DialogConfig.create()
-                                            .withTitle("Song info successfully saved")
-                                            .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                                            .withPrompt("Your song was successfully saved.")
-                                            .build()
+                                DialogConfig.create()
+                                    .withTitle("Song info successfully saved")
+                                    .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                                    .withPrompt("Your song was successfully saved at: \"" + path + "\".")
+                                    .build()
                             );
-
                         } catch (IOException exception) {
                             displayException("Failed to save song info", exception);
                         }
@@ -418,12 +453,12 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
                 }
                 case 2 -> {
                     boolean confirmRetry = DialogUtil.showConfirmationDialog(
-                            DialogConfig.create()
-                                    .withTitle("Retry notes for better accuracy?")
-                                    .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                                    .withPrompt("Retrying clears your previous notes. Are you sure you want to retry?")
-                                    .build(),
-                            DialogOptions.YesNoCancel
+                        DialogConfig.create()
+                            .withTitle("Retry notes for better accuracy?")
+                            .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                            .withPrompt("Retrying clears your previous notes. Are you sure you want to retry?")
+                            .build(),
+                        DialogOptions.YesNoCancel
                     );
 
                     if (confirmRetry) {
@@ -433,16 +468,17 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
                 }
                 default -> {
                     boolean confirmReturn = DialogUtil.showConfirmationDialog(
-                            DialogConfig.create()
-                                    .withTitle("Exit Song Editor")
-                                    .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                                    .withPrompt("Return to main menu? Any unsaved work will be lost.")
-                                    .build(),
-                            DialogOptions.YesNoCancel
+                        DialogConfig.create()
+                            .withTitle("Exit Song Editor")
+                            .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                            .withPrompt("Return to main menu? Any unsaved work will be lost.")
+                            .build(),
+                        DialogOptions.YesNoCancel
                     );
 
                     if (confirmReturn) {
-                        FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu), CoreLoopState.Update);
+                        FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager()
+                            .switchScenes(SceneNames.MainMenu), CoreLoopState.Update);
                         return;
                     }
                 }
@@ -470,33 +506,60 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
         findMusicPathButton.setActionCommand("browse");
         findMusicPathButton.addActionListener(event -> {
             if ("browse".equals(event.getActionCommand())) {
-                String path = browseForPath(
-                        "Choose a song file to load.",
-                        FileDialog.LOAD,
-                        (dir, name) -> name.endsWith(".wav") || name.endsWith(".json"),
-                        "Song must be of WAV (.wav) or JSON (.json) format.",
-                        ".wav",
-                        ".json"
+                String[] fileTypes = new String[] {".wav", ".ogg", ".mp3", ".json"};
+                String path = browseForPath("Choose a song to load.", FileDialog.LOAD, null,
+                    (directory, file) -> {
+                        if (file == null) {
+                            return null;
+                        }
+
+                        boolean fileTypeMatch = false;
+
+                        for (String otherFileType : fileTypes) {
+                            if (file.endsWith(otherFileType)) {
+                                fileTypeMatch = true;
+                                break;
+                            }
+                        }
+
+                        if (!fileTypeMatch) {
+                            DialogUtil.showMessageDialog(
+                                DialogConfig.create()
+                                    .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                                    .withTitle("Invalid file format")
+                                    .withPrompt("Song must be of .wav, .ogg, .mp3, or .json format.")
+                                    .build()
+                            );
+                            directory = "";
+                            file = "";
+                        }
+
+                        return directory + file;
+                    },
+                    true
                 );
 
+                System.out.println("result: " + path);
                 if (path != null) {
                     if (path.endsWith(".json")) {
                         boolean fillJsonData = DialogUtil.showConfirmationDialog(
-                                DialogConfig.create()
-                                        .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                                        .withTitle("JSON file detected.")
-                                        .withPrompt("Detected JSON file. Load JSON data?")
-                                        .build(),
-                                DialogOptions.YesNo
+                            DialogConfig.create()
+                                .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                                .withTitle("JSON file detected.")
+                                .withPrompt("Detected JSON file. Load JSON data?")
+                                .build(),
+                            DialogOptions.YesNo
                         );
 
                         if (fillJsonData) {
                             try {
                                 Gson gson = new Gson();
                                 String songInfoJson = Files.readString(Path.of(path));
+
                                 EditableSongInfo editableSongInfo = gson.fromJson(songInfoJson, EditableSongInfo.class);
                                 editableSongInfoRef.set(editableSongInfo);
                                 hasJsonFile.set(true);
+
                                 songNameCombo.right().setText(editableSongInfo.songName);
                                 bpmCombo.right().setText("" + editableSongInfo.bpm);
                                 beatPeekCombo.right().setText("" + editableSongInfo.beatPeekCount);
@@ -504,14 +567,14 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
                                 musicPathInput.setText(editableSongInfo.musicPath);
 
                                 String laneKeysString = editableSongInfo.getLaneKeys().stream()
-                                        .map(Keys::name)
-                                        .collect(Collectors.joining(","));
+                                    .map(Keys::name)
+                                    .collect(Collectors.joining(","));
                                 laneKeysCombo.right().setText(laneKeysString);
                             } catch (IOException exception) {
                                 displayException("Error while trying to load JSON file at \"" + path + "\"", exception);
                             }
                         }
-                    } else if (path.endsWith(".wav")) {
+                    } else {
                         musicPathInput.setText(path);
                     }
                 }
@@ -527,8 +590,8 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
             musicPathInput.setText(songInfo.musicPath);
 
             String laneKeysString = songInfo.getLaneKeys().stream()
-                    .map(Keys::name)
-                    .collect(Collectors.joining(","));
+                .map(Keys::name)
+                .collect(Collectors.joining(","));
             laneKeysCombo.right().setText(laneKeysString);
         }
 
@@ -548,26 +611,27 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
 
         while (true) {
             boolean confirmation = DialogUtil.showConfirmationDialog(
-                    DialogConfig.create()
-                            .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                            .withTitle("Song Configuration")
-                            .withPrompt(songConfigPanel)
-                            .build(),
-                    DialogOptions.OkCancel
+                DialogConfig.create()
+                    .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                    .withTitle("Song Configuration")
+                    .withPrompt(songConfigPanel)
+                    .build(),
+                DialogOptions.OkCancel
             );
 
             if (!confirmation) {
                 boolean confirmReturn = DialogUtil.showConfirmationDialog(
-                        DialogConfig.create()
-                                .withTitle("Exit Song Editor")
-                                .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                                .withPrompt("Return to main menu? Any unsaved work will be lost.")
-                                .build(),
-                        DialogOptions.YesNoCancel
+                    DialogConfig.create()
+                        .withTitle("Exit Song Editor")
+                        .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                        .withPrompt("Return to main menu? Any unsaved work will be lost.")
+                        .build(),
+                    DialogOptions.YesNoCancel
                 );
 
                 if (confirmReturn) {
-                    FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu), CoreLoopState.Update);
+                    FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager()
+                        .switchScenes(SceneNames.MainMenu), CoreLoopState.Update);
                     return MainMenuSwitch;
                 } else {
                     continue;
@@ -577,14 +641,14 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
             if (hasJsonFile.get()) {
                 String[] options = {"Record New Notes", "Skip to Editing"};
                 int skipRecord = DialogUtil.showOptionDialog(
-                        DialogConfig.create()
-                                .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                                .withTitle("Detected JSON file.")
-                                .withPrompt("JSON file was detected. Would you like to skip to the editing process?")
-                                .build(),
-                        DialogMessageTypes.Question,
-                        options,
-                        "Skip to Editing"
+                    DialogConfig.create()
+                        .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                        .withTitle("Detected JSON file.")
+                        .withPrompt("JSON file was detected. Would you like to skip to the editing process?")
+                        .build(),
+                    DialogMessageTypes.Question,
+                    options,
+                    "Skip to Editing"
                 );
 
                 if (skipRecord == 1) {
@@ -609,7 +673,8 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
             try {
                 beatPeekCount = Integer.parseInt(beatPeekCombo.right().getText().strip());
             } catch (NumberFormatException exception) {
-                DialogUtil.showMessageDialog(DialogConfig.create().withPrompt("Couldn't parse beats shown in advance: " + exception.getMessage()).build());
+                DialogUtil.showMessageDialog(DialogConfig.create()
+                    .withPrompt("Couldn't parse beats shown in advance: " + exception.getMessage()).build());
                 return null;
             }
 
@@ -617,7 +682,8 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
             try {
                 songBeatOffset = Double.parseDouble(beatOffsetCombo.right().getText().strip());
             } catch (NumberFormatException exception) {
-                DialogUtil.showMessageDialog(DialogConfig.create().withPrompt("Couldn't parse song beat offset: " + exception.getMessage()).build());
+                DialogUtil.showMessageDialog(DialogConfig.create().withPrompt("Couldn't parse song beat offset: " + exception.getMessage())
+                    .build());
                 return null;
             }
 
@@ -646,10 +712,12 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
 
         while (file == null) {
             FileDialog songLoaderDialog = new FileDialog(FastJEngine.<SimpleDisplay>getDisplay().getWindow(), title, fileDialogType);
+
             songLoaderDialog.setDirectory(System.getProperty("user.home"));
             songLoaderDialog.setFilenameFilter(filter);
             songLoaderDialog.setMultipleMode(false);
             songLoaderDialog.setVisible(true);
+
             file = songLoaderDialog.getFile();
             directory = songLoaderDialog.getDirectory();
 
@@ -668,11 +736,11 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
 
                 if (!matchOtherFileType) {
                     DialogUtil.showMessageDialog(
-                            DialogConfig.create()
-                                    .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                                    .withTitle("Invalid file format")
-                                    .withPrompt(invalidFormatMessage)
-                                    .build()
+                        DialogConfig.create()
+                            .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                            .withTitle("Invalid file format")
+                            .withPrompt(invalidFormatMessage)
+                            .build()
                     );
                     file = null;
                 }
@@ -682,16 +750,42 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
         return directory + file;
     }
 
+    private String browseForPath(String title, int fileDialogType, String initialName, BiFunction<String, String, String> fileAction, boolean returnOnNull) {
+        String file;
+
+        do {
+            System.out.println("next");
+            FileDialog songSaverDialog = new FileDialog(FastJEngine.<SimpleDisplay>getDisplay().getWindow(), title, fileDialogType);
+
+            songSaverDialog.setDirectory(System.getProperty("user.home"));
+            songSaverDialog.setMultipleMode(false);
+            songSaverDialog.setFile(initialName);
+            songSaverDialog.setVisible(true);
+
+            file = fileAction.apply(songSaverDialog.getDirectory(), songSaverDialog.getFile());
+
+            if (file == null && returnOnNull) {
+                System.out.println("null");
+                return null;
+            }
+        } while (file == null || file.isBlank());
+
+        System.out.println("? " + file);
+        return file;
+    }
+
     private String browseForPath(String title, int fileDialogType, String initialName) {
         String file = null;
         String directory = null;
 
         while (file == null) {
             FileDialog songSaverDialog = new FileDialog(FastJEngine.<SimpleDisplay>getDisplay().getWindow(), title, fileDialogType);
+
             songSaverDialog.setDirectory(System.getProperty("user.home"));
             songSaverDialog.setMultipleMode(false);
-            songSaverDialog.setFile(initialName + ".json");
+            songSaverDialog.setFile(initialName + (initialName.endsWith(".json") ? "" : ".json"));
             songSaverDialog.setVisible(true);
+
             directory = songSaverDialog.getDirectory();
             file = songSaverDialog.getFile();
 
@@ -759,12 +853,12 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
         Throwable currentException = exception;
         do {
             formattedException.append(System.lineSeparator())
-                    .append("Caused by: ")
-                    .append(currentException.getClass().getName())
-                    .append(": ")
-                    .append(currentException.getMessage())
-                    .append(System.lineSeparator())
-                    .append(formatStackTrace(currentException));
+                .append("Caused by: ")
+                .append(currentException.getClass().getName())
+                .append(": ")
+                .append(currentException.getMessage())
+                .append(System.lineSeparator())
+                .append(formatStackTrace(currentException));
         } while ((currentException = currentException.getCause()) != null);
 
         JTextArea textArea = new JTextArea(formattedException.toString());
@@ -773,27 +867,29 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
         textArea.setFont(Fonts.notoSansMono(Font.BOLD, 13));
 
         DialogUtil.showMessageDialog(
-                DialogConfig.create()
-                        .withParentComponent(null)
-                        .withTitle(exception.getClass().getName() + (message != null ? (": " + message) : ""))
-                        .withPrompt(textArea)
-                        .build()
+            DialogConfig.create()
+                .withParentComponent(null)
+                .withTitle(exception.getClass().getName() + (message != null ? (": " + message) : ""))
+                .withPrompt(textArea)
+                .build()
         );
     }
 
     private static String formatStackTrace(Throwable exception) {
         return Arrays.stream(exception.getStackTrace())
-                .map(stackTraceElement -> "at " + stackTraceElement.toString() + "\n")
-                .toList()
-                .toString()
-                .replaceFirst("\\[", "")
-                .replaceAll("](.*)\\[", "")
-                .replaceAll("(, )?at ", "    at ")
-                .replace("]", "")
-                .trim();
+            .map(stackTraceElement -> "at " + stackTraceElement.toString() + "\n")
+            .toList()
+            .toString()
+            .replaceFirst("\\[", "")
+            .replaceAll("](.*)\\[", "")
+            .replaceAll("(, )?at ", "    at ")
+            .replace("]", "")
+            .trim();
     }
 
     record LabelCombo(JLabel left, JLabel right) {}
+
     record FieldCombo(JTextField left, JTextField right) {}
+
     record LabeledField(JLabel left, JTextField right) {}
 }
