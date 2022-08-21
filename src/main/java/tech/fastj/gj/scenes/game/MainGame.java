@@ -23,13 +23,13 @@ import tech.fastj.input.keyboard.KeyboardActionListener;
 import tech.fastj.input.keyboard.Keys;
 import tech.fastj.input.keyboard.events.KeyboardStateEvent;
 import tech.fastj.logging.Log;
+import tech.fastj.math.Point;
 import tech.fastj.math.Pointf;
 import tech.fastj.systems.audio.state.PlaybackState;
 import tech.fastj.systems.control.Scene;
 
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import javax.swing.SwingUtilities;
@@ -37,7 +37,7 @@ import javax.swing.SwingUtilities;
 public class MainGame extends Scene implements EventObserver<ConductorFinishedEvent> {
 
     private GameState gameState;
-    private User user;
+    private final User user;
     private Conductor conductor;
     private SongInfo songInfo;
 
@@ -48,12 +48,15 @@ public class MainGame extends Scene implements EventObserver<ConductorFinishedEv
     private KeyboardActionListener pauseListener;
     private boolean allowClicks;
 
+    GameInputMatcher inputMatcher;
+
     private ResultMenu resultMenu;
-    private List<KeyCircle> keyCircles;
-    private List<MusicNote> musicNotes;
+    private final List<KeyCircle> keyCircles;
 
     public MainGame() {
         super(SceneNames.Game);
+        user = User.getInstance();
+        keyCircles = new ArrayList<>();
     }
 
     public GameState getGameState() {
@@ -75,96 +78,126 @@ public class MainGame extends Scene implements EventObserver<ConductorFinishedEv
     @Override
     public void load(FastJCanvas canvas) {
         Log.debug(MainGame.class, "loading {}", getSceneName());
+
+        resetConductor(canvas);
+        createUI();
+        createListeners();
         changeState(GameState.Intro);
+
         Log.debug(MainGame.class, "loaded {}", getSceneName());
+    }
+
+    private void createUI() {
+        songNameBox = new ContentBox(this, "Now Playing");
+        songNameBox.setTranslation(new Pointf(80f, 30f));
+        songNameBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
+        songNameBox.getStatDisplay().setFill(Colors.Snowy);
+        songNameBox.setShouldRender(false);
+
+        pauseButton = new PauseButton(this, new Pointf(20f, 20f), new Pointf(40f));
+        pauseButton.setFill(Color.gray);
+        pauseButton.setOutlineColor(Color.black);
+        pauseButton.addOnAction(event -> {
+            if (event.isConsumed() || gameState != GameState.Playing || conductor.musicSource.getCurrentPlaybackState() != PlaybackState.Playing) {
+                return;
+            }
+
+            event.consume();
+            FastJEngine.runLater(() -> changeState(GameState.Paused));
+        });
+        pauseButton.setShouldRender(false);
+    }
+
+    private void createListeners() {
+        pauseListener = new KeyboardActionListener() {
+            @Override
+            public void onKeyReleased(KeyboardStateEvent event) {
+                if (event.isConsumed() || gameState != GameState.Playing || conductor.musicSource.getCurrentPlaybackState() != PlaybackState.Playing) {
+                    return;
+                }
+
+                if (event.getKey() == Keys.P || event.getKey() == Keys.Escape) {
+                    event.consume();
+                    FastJEngine.runLater(() -> changeState(GameState.Paused));
+                }
+            }
+        };
+
+        inputMatcher.setOnLaneKeyPressed(event -> {
+            for (KeyCircle keyCircle : keyCircles) {
+                if (keyCircle.getKey() == event.getKey()) {
+                    keyCircle.setFill(Color.white, false);
+                    return;
+                }
+            }
+        });
+    }
+
+    private void resetConductor(FastJCanvas canvas) {
+        conductor = new Conductor(songInfo, this, true);
+        conductor.setSpawnMusicNote((note, noteLane) -> {
+            Pointf noteStartingLocation = new Pointf((canvas.getCanvasCenter().x) + (noteLane * Shapes.NoteSize * 2.5f), -Shapes.NoteSize / 2f);
+            Color musicNoteColor = DrawUtil.randomColor();
+            MusicNote musicNote = new MusicNote(noteStartingLocation, Shapes.NoteSize)
+                .setFill(musicNoteColor)
+                .setOutline(MusicNote.DefaultOutlineStroke, musicNoteColor.darker());
+
+            double noteTravelDistance = canvas.getResolution().y - (Shapes.NoteSize * 4f);
+            MusicNoteMovement musicNoteMovement = new MusicNoteMovement(conductor, note, noteTravelDistance);
+            musicNote.addLateBehavior(musicNoteMovement, this);
+            drawableManager().addGameObject(musicNote);
+        });
+        drawableManager().addGameObject(conductor);
+
+        inputMatcher = new GameInputMatcher(
+            conductor,
+            songInfo,
+            message -> {
+                Notice notice = new Notice(message, new Pointf(20f, 40f), this);
+                notice.setFill("Perfect!".equalsIgnoreCase(message) ? Color.green : Color.red.brighter());
+                notice.setFont(Fonts.StatTextFont);
+                drawableManager().addGameObject(notice);
+            }
+        );
     }
 
     @Override
     public void unload(FastJCanvas canvas) {
         Log.debug(MainGame.class, "unloading {}", getSceneName());
+
+        FastJEngine.getGameLoop().removeEventObserver(this, ConductorFinishedEvent.class);
         gameState = null;
         allowClicks = false;
 
-        if (user != null) {
-            user.resetScore();
-            user = null;
-        }
-
-        if (conductor != null) {
-            conductor.setPaused(true);
-            conductor.destroy(this);
-            conductor.musicSource.stop();
-            conductor = null;
-        }
-
-        if (songNameBox != null) {
-            songNameBox.destroy(this);
-            songNameBox = null;
-        }
-
-        if (keyCircles != null) {
-            for (KeyCircle keyCircle : keyCircles) {
-                keyCircle.destroy(this);
-            }
-            keyCircles.clear();
-            keyCircles = null;
-        }
-
-        if (musicNotes != null) {
-            for (MusicNote musicNote : musicNotes) {
-                musicNote.destroy(this);
-            }
-            musicNotes.clear();
-            musicNotes = null;
-        }
-
-        if (pauseMenu != null) {
-            pauseMenu.destroy(this);
-            pauseMenu = null;
-        }
-
-        if (pauseButton != null) {
-            pauseButton.destroy(this);
-            pauseButton = null;
-        }
+        user.resetScore();
+        keyCircles.clear();
 
         if (pauseListener != null) {
             inputManager().removeKeyboardActionListener(pauseListener);
             pauseListener = null;
         }
 
-        if (resultMenu != null) {
-            resultMenu.destroy(this);
-            resultMenu = null;
-        }
-
-        FastJEngine.getGameLoop().removeEventObserver(this, ConductorFinishedEvent.class);
-
-        setInitialized(false);
         Log.info(MainGame.class, "unloaded {}", getSceneName());
     }
 
     @Override
     public void fixedUpdate(FastJCanvas canvas) {
-    }
-
-    @Override
-    public void update(FastJCanvas canvas) {
+        Log.info("listeners: {}", getBehaviorListeners().size());
     }
 
     public void changeState(GameState next) {
         Log.debug(MainGame.class, "changing state from {} to {}", gameState, next);
+
         switch (next) {
             case Intro -> {
                 if (gameState == GameState.Results) {
-                    songNameBox.destroy(this);
-                    songNameBox = null;
-
-                    user.resetScore();
-                    user = null;
+                    songNameBox.setShouldRender(false);
 
                     resultMenu.destroy(this);
                     resultMenu = null;
+                    resetConductor(FastJEngine.getCanvas());
+
+                    user.resetScore();
                     FastJEngine.getGameLoop().removeEventObserver(this, ConductorFinishedEvent.class);
                 }
 
@@ -172,100 +205,21 @@ public class MainGame extends Scene implements EventObserver<ConductorFinishedEv
             }
             case Playing -> {
                 if (gameState == GameState.Intro) {
-                    user = User.getInstance();
+                    songNameBox.setContent(conductor.musicInfo.getSongName());
+                    songNameBox.setShouldRender(true);
 
-                    conductor = new Conductor(songInfo, this, true);
-                    FastJCanvas canvas = FastJEngine.getCanvas();
+                    createLaneKeys(keyCircles);
 
-                    musicNotes = new ArrayList<>();
-                    conductor.setSpawnMusicNote((note, noteLane) -> {
-                        Pointf noteStartingLocation = new Pointf((canvas.getCanvasCenter().x) + (noteLane * Shapes.NoteSize * 2.5f), -Shapes.NoteSize / 2f);
-                        Color musicNoteColor = DrawUtil.randomColor();
-                        MusicNote musicNote = new MusicNote(noteStartingLocation, Shapes.NoteSize)
-                                .setFill(musicNoteColor)
-                                .setOutline(MusicNote.DefaultOutlineStroke, musicNoteColor.darker());
-
-                        double noteTravelDistance = canvas.getResolution().y - (Shapes.NoteSize * 4f);
-                        MusicNoteMovement musicNoteMovement = new MusicNoteMovement(conductor, note, noteTravelDistance);
-                        musicNote.addLateBehavior(musicNoteMovement, this);
-                        musicNotes.add(musicNote);
-                        drawableManager().addGameObject(musicNote);
-                    });
-
-                    songNameBox = new ContentBox(this, "Now Playing", conductor.musicInfo.getSongName());
-                    songNameBox.setTranslation(new Pointf(80f, 30f));
-                    songNameBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
-                    songNameBox.getStatDisplay().setFill(Colors.Snowy);
-                    drawableManager().addUIElement(songNameBox);
-
-                    Collection<Keys> laneKeys = conductor.musicInfo.getLaneKeys();
-                    int laneKeyIncrement = 1;
-                    keyCircles = new ArrayList<>();
-                    for (Keys laneKey : laneKeys) {
-                        Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x) + (laneKeyIncrement * Shapes.NoteSize * 2.5f), canvas.getResolution().y - (Shapes.NoteSize * 4f));
-                        KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma", this)
-                                .setFill(Color.gray)
-                                .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
-                                .setTranslation(laneStartingLocation);
-                        keyCircles.add(keyCircle);
-                        drawableManager().addGameObject(keyCircle);
-                        laneKeyIncrement++;
-                    }
-
-                    drawableManager().addGameObject(conductor);
-
-                    GameInputMatcher inputMatcher = new GameInputMatcher(
-                            conductor,
-                            songInfo,
-                            message -> {
-                                Notice notice = new Notice(message, new Pointf(20f, 40f), this);
-                                notice.setFill("Perfect!".equalsIgnoreCase(message) ? Color.green : Color.red.brighter());
-                                notice.setFont(Fonts.StatTextFont);
-                                drawableManager().addGameObject(notice);
-                            }
-                    );
-                    inputManager().addKeyboardActionListener(inputMatcher);
-                    inputMatcher.setOnLaneKeyPressed(event -> {
-                        for (KeyCircle keyCircle : keyCircles) {
-                            if (keyCircle.getKey() == event.getKey()) {
-                                keyCircle.setFill(Color.white, false);
-                                return;
-                            }
-                        }
-                    });
                     FastJEngine.getGameLoop().addEventObserver(this, ConductorFinishedEvent.class);
-
-                    pauseButton = new PauseButton(this, new Pointf(20f, 20f), new Pointf(40f));
-                    pauseButton.setFill(Color.gray);
-                    pauseButton.setOutlineColor(Color.black);
-                    pauseButton.addOnAction(event -> {
-                        if (event.isConsumed() || gameState != GameState.Playing || conductor.musicSource.getCurrentPlaybackState() != PlaybackState.Playing) {
-                            return;
-                        }
-
-                        event.consume();
-                        FastJEngine.runLater(() -> changeState(GameState.Paused));
-                    });
-
-                    pauseListener = new KeyboardActionListener() {
-                        @Override
-                        public void onKeyReleased(KeyboardStateEvent event) {
-                            if (event.isConsumed() || gameState != GameState.Playing || conductor.musicSource.getCurrentPlaybackState() != PlaybackState.Playing) {
-                                return;
-                            }
-
-                            if (event.getKey() == Keys.P || event.getKey() == Keys.Escape) {
-                                event.consume();
-                                FastJEngine.runLater(() -> changeState(GameState.Paused));
-                            }
-                        }
-                    };
+                    pauseButton.setShouldRender(true);
                 } else if (gameState == GameState.Paused) {
                     pauseMenu.setShouldRender(false);
                     conductor.setPaused(false);
-                    inputManager().addMouseActionListener(pauseButton);
                 }
+
                 inputManager().addKeyboardActionListener(pauseListener);
+                inputManager().addMouseActionListener(pauseButton);
+                inputManager().addKeyboardActionListener(inputMatcher);
             }
             case Paused -> {
                 if (pauseMenu == null) {
@@ -275,37 +229,54 @@ public class MainGame extends Scene implements EventObserver<ConductorFinishedEv
 
                 conductor.setPaused(true);
                 pauseMenu.setShouldRender(true);
+
                 inputManager().removeKeyboardActionListener(pauseListener);
                 inputManager().removeMouseActionListener(pauseButton);
+                inputManager().removeKeyboardActionListener(inputMatcher);
             }
             case Results -> {
-                if (keyCircles != null) {
-                    for (KeyCircle keyCircle : keyCircles) {
-                        keyCircle.destroy(this);
-                    }
-                    keyCircles.clear();
-                    keyCircles = null;
+                for (KeyCircle keyCircle : keyCircles) {
+                    keyCircle.destroy(this);
                 }
-
-                if (musicNotes != null) {
-                    for (MusicNote musicNote : musicNotes) {
-                        musicNote.destroy(this);
-                    }
-                    musicNotes.clear();
-                    musicNotes = null;
-                }
-
-                if (pauseButton != null) {
-                    pauseButton.destroy(this);
-                    pauseButton = null;
-                }
+                keyCircles.clear();
 
                 conductor.setPaused(true);
+                conductor.destroy(this);
+                pauseButton.setShouldRender(false);
+
                 inputManager().removeKeyboardActionListener(pauseListener);
-                SwingUtilities.invokeLater(() -> FastJEngine.runLater(() -> FastJEngine.getGameLoop().removeEventObserver(this, ConductorFinishedEvent.class)));
+                inputManager().removeMouseActionListener(pauseButton);
+                inputManager().removeKeyboardActionListener(inputMatcher);
+
+                SwingUtilities.invokeLater(() -> FastJEngine.runLater(
+                    () -> FastJEngine.getGameLoop().removeEventObserver(this, ConductorFinishedEvent.class)
+                ));
             }
         }
         gameState = next;
+    }
+
+    public void createLaneKeys(List<KeyCircle> keyCircles) {
+        List<Keys> laneKeys = conductor.musicInfo.getLaneKeys();
+        FastJCanvas canvas = FastJEngine.getCanvas();
+        Pointf canvasCenter = canvas.getCanvasCenter();
+        Point canvasResolution = canvas.getResolution();
+
+        for (int i = 0; i < laneKeys.size(); i++) {
+            Keys laneKey = laneKeys.get(i);
+            Pointf laneStartingLocation = new Pointf(
+                canvasCenter.x + ((i + 1) * Shapes.NoteSize * 2.5f),
+                canvasResolution.y - (Shapes.NoteSize * 4f)
+            );
+
+            KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma", this)
+                .setFill(Color.gray)
+                .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
+                .setTranslation(laneStartingLocation);
+
+            keyCircles.add(keyCircle);
+            drawableManager().addGameObject(keyCircle);
+        }
     }
 
     @Override

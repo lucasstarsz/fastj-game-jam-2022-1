@@ -83,10 +83,10 @@ public class ResultMenu extends UIElement<MouseActionEvent> {
             FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu), CoreLoopState.Update);
         });
 
-        origin.drawableManager.removeUIElement(playAgainButton);
-        origin.drawableManager.removeUIElement(mainMenuButton);
-        origin.drawableManager.removeUIElement(quitGameButton);
-        origin.drawableManager.removeUIElement(scoreBox);
+        origin.drawableManager().removeUIElement(playAgainButton);
+        origin.drawableManager().removeUIElement(mainMenuButton);
+        origin.drawableManager().removeUIElement(quitGameButton);
+        origin.drawableManager().removeUIElement(scoreBox);
 //        origin.drawableManager.removeUIElement(blocksStackedBox);
     }
 

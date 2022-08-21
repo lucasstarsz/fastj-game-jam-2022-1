@@ -2,7 +2,7 @@ package tech.fastj.gj.rhythm;
 
 import tech.fastj.input.keyboard.Keys;
 
-import java.util.Collection;
+import java.util.List;
 
 public interface GeneralSongInfo {
 
@@ -18,7 +18,7 @@ public interface GeneralSongInfo {
 
     int getNoteLane(int index);
 
-    Collection<Keys> getLaneKeys();
+    List<Keys> getLaneKeys();
 
     Keys getLaneKey(int lane);
 

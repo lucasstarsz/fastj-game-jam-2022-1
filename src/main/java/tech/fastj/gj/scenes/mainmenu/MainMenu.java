@@ -24,12 +24,6 @@ import java.io.IOException;
 
 public class MainMenu extends Scene {
 
-    private Text2D titleText;
-    private BetterButton playButton;
-    private BetterButton infoButton;
-    private BetterButton songEditorButton;
-    private BetterButton settingsButton;
-    private BetterButton exitButton;
     private MemoryAudio mainMenuMusic;
 
     public MainMenu() {
@@ -41,14 +35,14 @@ public class MainMenu extends Scene {
         Log.debug(MainMenu.class, "loading {}", getSceneName());
         Pointf center = canvas.getCanvasCenter();
 
-        titleText = Text2D.create(FastJGameJam2022.GameName)
-                .withFill(Colors.Snowy)
-                .withFont(Fonts.TitleTextFont)
-                .withTransform(Pointf.subtract(center, 260f, 200f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
-                .build();
+        Text2D titleText = Text2D.create(FastJGameJam2022.GameName)
+            .withFill(Colors.Snowy)
+            .withFont(Fonts.TitleTextFont)
+            .withTransform(Pointf.subtract(center, 260f, 200f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
+            .build();
         drawableManager().addGameObject(titleText);
 
-        playButton = new BetterButton(this, Pointf.subtract(center, 225f, 50f), Shapes.ButtonSize);
+        BetterButton playButton = new BetterButton(this, Pointf.subtract(center, 225f, 50f), Shapes.ButtonSize);
         playButton.setText("Play Game");
         playButton.setFill(Color.darkGray);
         playButton.setFont(Fonts.ButtonTextFont);
@@ -59,7 +53,7 @@ public class MainMenu extends Scene {
             FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.SongPicker, false), CoreLoopState.Update);
         });
 
-        infoButton = new BetterButton(this, Pointf.subtract(center, -25f, 50f), Shapes.ButtonSize);
+        BetterButton infoButton = new BetterButton(this, Pointf.subtract(center, -25f, 50f), Shapes.ButtonSize);
         infoButton.setText("Information");
         infoButton.setFill(Color.darkGray);
         infoButton.setFont(Fonts.ButtonTextFont);
@@ -70,7 +64,7 @@ public class MainMenu extends Scene {
             FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.Information, false), CoreLoopState.Update);
         });
 
-        songEditorButton = new BetterButton(this, Pointf.subtract(center, 225f, -50f), Shapes.ButtonSize);
+        BetterButton songEditorButton = new BetterButton(this, Pointf.subtract(center, 225f, -50f), Shapes.ButtonSize);
         songEditorButton.setText("Song Editor");
         songEditorButton.setFill(Color.darkGray);
         songEditorButton.setFont(Fonts.ButtonTextFont);
@@ -81,7 +75,7 @@ public class MainMenu extends Scene {
             FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.SongEditor), CoreLoopState.Update);
         });
 
-        settingsButton = new BetterButton(this, Pointf.subtract(center, -25f, -50f), Shapes.ButtonSize);
+        BetterButton settingsButton = new BetterButton(this, Pointf.subtract(center, -25f, -50f), Shapes.ButtonSize);
         settingsButton.setText("Settings");
         settingsButton.setFill(Color.darkGray);
         settingsButton.setFont(Fonts.ButtonTextFont);
@@ -92,7 +86,7 @@ public class MainMenu extends Scene {
             FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.Settings, false), CoreLoopState.Update);
         });
 
-        exitButton = new BetterButton(this, Pointf.subtract(center, 100f, -150f), Shapes.ButtonSize);
+        BetterButton exitButton = new BetterButton(this, Pointf.subtract(center, 100f, -150f), Shapes.ButtonSize);
         exitButton.setText("Quit Game");
         exitButton.setFill(Color.darkGray);
         exitButton.setFont(Fonts.ButtonTextFont);
@@ -115,56 +109,20 @@ public class MainMenu extends Scene {
     @Override
     public void unload(FastJCanvas canvas) {
         Log.debug(MainMenu.class, "unloading {}", getSceneName());
-        if (titleText != null) {
-            titleText.destroy(this);
-            titleText = null;
-        }
-
-        if (playButton != null) {
-            playButton.destroy(this);
-            playButton = null;
-        }
-
-        if (infoButton != null) {
-            infoButton.destroy(this);
-            infoButton = null;
-        }
-
-        if (settingsButton != null) {
-            settingsButton.destroy(this);
-            settingsButton = null;
-        }
-
-        if (songEditorButton != null) {
-            songEditorButton.destroy(this);
-            songEditorButton = null;
-        }
-
-        if (exitButton != null) {
-            exitButton.destroy(this);
-            exitButton = null;
-        }
 
         if (mainMenuMusic != null) {
             FastJEngine.getGameLoop().removeEventObserver(mainMenuMusic.getAudioEventListener(), AudioEvent.class);
             mainMenuMusic.stop();
+
             try {
                 mainMenuMusic.getAudioInputStream().close();
             } catch (IOException exception) {
                 Log.warn(MainMenu.class, "Error occurred while closing main menu music", exception);
             }
+
             mainMenuMusic = null;
         }
 
-        setInitialized(false);
         Log.debug(MainMenu.class, "unloaded {}", getSceneName());
-    }
-
-    @Override
-    public void fixedUpdate(FastJCanvas canvas) {
-    }
-
-    @Override
-    public void update(FastJCanvas canvas) {
     }
 }

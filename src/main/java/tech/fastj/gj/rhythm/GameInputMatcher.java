@@ -36,7 +36,7 @@ public final class GameInputMatcher implements KeyboardActionListener {
             return;
         }
 
-        if (songInfo.getLaneKeys().contains(keyboardStateEvent.getKey())) {
+        if (songInfo.getLaneKeysMap().containsValue((keyboardStateEvent.getKey()))) {
             double inputBeatPosition = (((keyboardStateEvent.getTimestamp() / 1_000_000_000d) - conductor.dspSongTime - conductor.pauseTimeOffset) / conductor.secPerBeat) - conductor.firstBeatOffset;
             FastJEngine.trace("{} arrow key pressed at {}", keyboardStateEvent.getKey(), inputBeatPosition);
             checkNotes(inputBeatPosition, keyboardStateEvent.getKey());

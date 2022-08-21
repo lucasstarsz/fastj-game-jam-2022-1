@@ -1,6 +1,5 @@
 package tech.fastj.gj.scenes.songpicker;
 
-import com.google.gson.Gson;
 import tech.fastj.engine.FastJEngine;
 import tech.fastj.gameloop.CoreLoopState;
 import tech.fastj.gj.GameManager;
@@ -23,21 +22,19 @@ import tech.fastj.math.Transform2D;
 import tech.fastj.systems.control.Scene;
 import tech.fastj.systems.control.SceneManager;
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.FileDialog;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import javax.swing.SwingUtilities;
+
+import com.google.gson.Gson;
+
 public class SongPicker extends Scene {
 
-    private Text2D titleText;
-    private BetterButton playStackAttackButton;
-    private BetterButton playLadybirdButton;
-    private BetterButton playCustomButton;
-    private BetterButton browseCustomButton;
-    private BetterButton mainMenuButton;
     private Text2D customSongInfo;
     private SongInfo customSong;
 
@@ -50,14 +47,14 @@ public class SongPicker extends Scene {
         Log.debug(SongPicker.class, "loading {}", getSceneName());
         Pointf center = canvas.getCanvasCenter();
 
-        titleText = Text2D.create("Select a Song")
-                .withFill(Colors.Snowy)
-                .withFont(Fonts.TitleTextFont)
-                .withTransform(Pointf.subtract(center, 155f, 200f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
-                .build();
-        drawableManager.addGameObject(titleText);
+        Text2D titleText = Text2D.create("Select a Song")
+            .withFill(Colors.Snowy)
+            .withFont(Fonts.TitleTextFont)
+            .withTransform(Pointf.subtract(center, 155f, 200f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
+            .build();
+        drawableManager().addGameObject(titleText);
 
-        playStackAttackButton = new BetterButton(this, Pointf.subtract(center, 225f, 50f), Shapes.ButtonSize);
+        BetterButton playStackAttackButton = new BetterButton(this, Pointf.subtract(center, 225f, 50f), Shapes.ButtonSize);
         playStackAttackButton.setText("Play Stack Attack");
         playStackAttackButton.setFill(Color.darkGray);
         playStackAttackButton.setFont(Fonts.ButtonTextFont);
@@ -72,10 +69,7 @@ public class SongPicker extends Scene {
                     SongInfo stackAttackInfo = gson.fromJson(json, SongInfo.class);
                     GameManager sceneManager = FastJEngine.getLogicManager();
 
-                    Scene mainMenuScene = sceneManager.getScene(SceneNames.MainMenu);
-                    mainMenuScene.inputManager.unload();
-                    mainMenuScene.unload(canvas);
-
+                    sceneManager.switchScenes(SceneNames.MainMenu);
                     sceneManager.<MainGame>getScene(SceneNames.Game).setSongInfo(stackAttackInfo);
                     sceneManager.switchScenes(SceneNames.Game);
                 } catch (IOException exception) {
@@ -84,7 +78,7 @@ public class SongPicker extends Scene {
             }, CoreLoopState.Update);
         });
 
-        playLadybirdButton = new BetterButton(this, Pointf.subtract(center, -25f, 50f), Shapes.ButtonSize);
+        BetterButton playLadybirdButton = new BetterButton(this, Pointf.subtract(center, -25f, 50f), Shapes.ButtonSize);
         playLadybirdButton.setText("Play Ladybird");
         playLadybirdButton.setFill(Color.darkGray);
         playLadybirdButton.setFont(Fonts.ButtonTextFont);
@@ -100,10 +94,7 @@ public class SongPicker extends Scene {
                     ladybirdInfo = gson.fromJson(json, SongInfo.class);
                     GameManager sceneManager = FastJEngine.getLogicManager();
 
-                    Scene mainMenuScene = sceneManager.getScene(SceneNames.MainMenu);
-                    mainMenuScene.inputManager.unload();
-                    mainMenuScene.unload(canvas);
-
+                    sceneManager.switchScenes(SceneNames.MainMenu);
                     sceneManager.<MainGame>getScene(SceneNames.Game).setSongInfo(ladybirdInfo);
                     sceneManager.switchScenes(SceneNames.Game);
                 } catch (IOException exception) {
@@ -112,7 +103,7 @@ public class SongPicker extends Scene {
             }, CoreLoopState.Update);
         });
 
-        playCustomButton = new BetterButton(this, Pointf.subtract(center, 225f, -50f), Shapes.ButtonSize);
+        BetterButton playCustomButton = new BetterButton(this, Pointf.subtract(center, 225f, -50f), Shapes.ButtonSize);
         playCustomButton.setText("Play Custom");
         playCustomButton.setFill(Color.darkGray);
         playCustomButton.setFont(Fonts.ButtonTextFont);
@@ -122,30 +113,25 @@ public class SongPicker extends Scene {
             mouseButtonEvent.consume();
 
             if (customSongInfo == null) {
-                SwingUtilities.invokeLater(() -> {
-                    DialogUtil.showMessageDialog(
-                            DialogConfig.create()
-                                    .withTitle("No Custom Song Loaded")
-                                    .withPrompt("You haven't loaded a custom song yet! Please click \"Browse...\" in order to select a custom song.")
-                                    .build()
-                    );
-                });
+                SwingUtilities.invokeLater(() -> DialogUtil.showMessageDialog(
+                    DialogConfig.create()
+                        .withTitle("No Custom Song Loaded")
+                        .withPrompt("You haven't loaded a custom song yet! Please click \"Browse...\" in order to select a custom song.")
+                        .build()
+                ));
                 return;
             }
 
             FastJEngine.runLater(() -> {
                 GameManager sceneManager = FastJEngine.getLogicManager();
 
-                Scene mainMenuScene = sceneManager.getScene(SceneNames.MainMenu);
-                mainMenuScene.inputManager.unload();
-                mainMenuScene.unload(canvas);
-
+                sceneManager.switchScenes(SceneNames.MainMenu);
                 sceneManager.<MainGame>getScene(SceneNames.Game).setSongInfo(customSong);
                 sceneManager.switchScenes(SceneNames.Game);
             }, CoreLoopState.Update);
         });
 
-        browseCustomButton = new BetterButton(this, Pointf.subtract(center, -25f, -50f), Shapes.ButtonSize);
+        BetterButton browseCustomButton = new BetterButton(this, Pointf.subtract(center, -25f, -50f), Shapes.ButtonSize);
         browseCustomButton.setText("Browse...");
         browseCustomButton.setFill(Color.darkGray);
         browseCustomButton.setFont(Fonts.ButtonTextFont);
@@ -155,11 +141,11 @@ public class SongPicker extends Scene {
             mouseButtonEvent.consume();
             SwingUtilities.invokeLater(() -> {
                 String path = browseForPath(
-                        "Choose a custom song file to load.",
-                        FileDialog.LOAD,
-                        (dir, name) -> name.endsWith(".json"),
-                        "Song must be of JSON (.json) format.",
-                        ".json"
+                    "Choose a custom song file to load.",
+                    FileDialog.LOAD,
+                    (dir, name) -> name.endsWith(".json"),
+                    "Song must be of JSON (.json) format.",
+                    ".json"
                 );
 
                 if (path == null) {
@@ -172,11 +158,11 @@ public class SongPicker extends Scene {
                     setCustomSong(gson.fromJson(json, SongInfo.class));
                 } catch (Exception exception) {
                     DialogUtil.showMessageDialog(
-                            DialogConfig.create()
-                                    .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                                    .withTitle("Couldn't load song data")
-                                    .withPrompt("There was an error while loading the song data: " + exception.getMessage() + ". No data was loaded.")
-                                    .build()
+                        DialogConfig.create()
+                            .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                            .withTitle("Couldn't load song data")
+                            .withPrompt("There was an error while loading the song data: " + exception.getMessage() + ". No data was loaded.")
+                            .build()
                     );
                 }
             });
@@ -186,9 +172,9 @@ public class SongPicker extends Scene {
         customSongInfo.setFont(Fonts.StatTextFont);
         customSongInfo.setFill(Colors.Snowy);
         customSongInfo.setTranslation(Pointf.subtract(center, 225f, -125f));
-        drawableManager.addGameObject(customSongInfo);
+        drawableManager().addGameObject(customSongInfo);
 
-        mainMenuButton = new BetterButton(this, Pointf.subtract(center, 100f, -175f), Shapes.ButtonSize);
+        BetterButton mainMenuButton = new BetterButton(this, Pointf.subtract(center, 100f, -175f), Shapes.ButtonSize);
         mainMenuButton.setText("Back");
         mainMenuButton.setFill(Color.darkGray);
         mainMenuButton.setFont(Fonts.ButtonTextFont);
@@ -200,56 +186,6 @@ public class SongPicker extends Scene {
         });
 
         Log.debug(SongPicker.class, "loaded {}", getSceneName());
-    }
-
-    @Override
-    public void unload(FastJCanvas canvas) {
-        Log.debug(SongPicker.class, "unloading {}", getSceneName());
-        if (titleText != null) {
-            titleText.destroy(this);
-            titleText = null;
-        }
-
-        if (playStackAttackButton != null) {
-            playStackAttackButton.destroy(this);
-            playStackAttackButton = null;
-        }
-
-        if (playLadybirdButton != null) {
-            playLadybirdButton.destroy(this);
-            playLadybirdButton = null;
-        }
-
-        if (browseCustomButton != null) {
-            browseCustomButton.destroy(this);
-            browseCustomButton = null;
-        }
-
-        if (playCustomButton != null) {
-            playCustomButton.destroy(this);
-            playCustomButton = null;
-        }
-
-        if (customSongInfo != null) {
-            customSongInfo.destroy(this);
-            customSongInfo = null;
-        }
-
-        if (mainMenuButton != null) {
-            mainMenuButton.destroy(this);
-            mainMenuButton = null;
-        }
-
-        setInitialized(false);
-        Log.debug(SongPicker.class, "unloaded {}", getSceneName());
-    }
-
-    @Override
-    public void fixedUpdate(FastJCanvas canvas) {
-    }
-
-    @Override
-    public void update(FastJCanvas canvas) {
     }
 
     private void setCustomSong(SongInfo songInfo) {
@@ -282,11 +218,11 @@ public class SongPicker extends Scene {
 
                 if (!matchOtherFileType) {
                     DialogUtil.showMessageDialog(
-                            DialogConfig.create()
-                                    .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                                    .withTitle("Invalid file format")
-                                    .withPrompt(invalidFormatMessage)
-                                    .build()
+                        DialogConfig.create()
+                            .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
+                            .withTitle("Invalid file format")
+                            .withPrompt(invalidFormatMessage)
+                            .build()
                     );
                     file = null;
                 }

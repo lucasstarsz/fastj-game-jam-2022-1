@@ -3,8 +3,7 @@ package tech.fastj.gj.rhythm;
 import tech.fastj.input.keyboard.Keys;
 
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -65,8 +64,8 @@ public class EditableSongInfo implements GeneralSongInfo {
     }
 
     @Override
-    public Collection<Keys> getLaneKeys() {
-        return Collections.unmodifiableCollection(laneKeys.values());
+    public List<Keys> getLaneKeys() {
+        return laneKeys.values().stream().toList();
     }
 
     @Override
@@ -114,12 +113,12 @@ public class EditableSongInfo implements GeneralSongInfo {
         }
         EditableSongInfo editableSongInfo = (EditableSongInfo) o;
         return Double.compare(editableSongInfo.bpm, bpm) == 0
-                && beatPeekCount == editableSongInfo.beatPeekCount
-                && Double.compare(editableSongInfo.firstBeatOffset, firstBeatOffset) == 0
-                && Arrays.equals(notes, editableSongInfo.notes)
-                && Arrays.equals(noteLanes, editableSongInfo.noteLanes)
-                && Objects.equals(laneKeys, editableSongInfo.laneKeys)
-                && Objects.equals(musicPath, editableSongInfo.musicPath);
+            && beatPeekCount == editableSongInfo.beatPeekCount
+            && Double.compare(editableSongInfo.firstBeatOffset, firstBeatOffset) == 0
+            && Arrays.equals(notes, editableSongInfo.notes)
+            && Arrays.equals(noteLanes, editableSongInfo.noteLanes)
+            && Objects.equals(laneKeys, editableSongInfo.laneKeys)
+            && Objects.equals(musicPath, editableSongInfo.musicPath);
     }
 
     @Override
@@ -133,15 +132,15 @@ public class EditableSongInfo implements GeneralSongInfo {
     @Override
     public String toString() {
         return "EditableSongInfo{" +
-                "bpm=" + bpm +
-                ", beatPeekCount=" + beatPeekCount +
-                ", firstBeatOffset=" + firstBeatOffset +
-                ", nextIndex=" + nextIndex +
-                ", musicPath='" + musicPath + '\'' +
-                ", notes=" + Arrays.toString(notes) +
-                ", noteLanes=" + Arrays.toString(noteLanes) +
-                ", laneKeys=" + laneKeys +
-                '}';
+            "bpm=" + bpm +
+            ", beatPeekCount=" + beatPeekCount +
+            ", firstBeatOffset=" + firstBeatOffset +
+            ", nextIndex=" + nextIndex +
+            ", musicPath='" + musicPath + '\'' +
+            ", notes=" + Arrays.toString(notes) +
+            ", noteLanes=" + Arrays.toString(noteLanes) +
+            ", laneKeys=" + laneKeys +
+            '}';
     }
 
     @Override

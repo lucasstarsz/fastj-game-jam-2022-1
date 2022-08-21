@@ -51,7 +51,6 @@ public class Conductor extends GameObject implements Behavior {
         } else {
             addBehavior(this, behaviorHandler);
         }
-
     }
 
     public void setSpawnMusicNote(BiConsumer<Double, Integer> spawnMusicNote) {
@@ -97,6 +96,7 @@ public class Conductor extends GameObject implements Behavior {
 
     @Override
     public void destroy() {
+        setPaused(true);
         musicSource.stop();
         musicPlayer.shutdownNow();
     }

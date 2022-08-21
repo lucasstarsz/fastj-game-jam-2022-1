@@ -26,9 +26,6 @@ public class Settings extends Scene {
     private Text2D difficultyText;
     private ArrowButton gameDifficulties;
 
-    private Text2D titleText;
-    private BetterButton mainMenuButton;
-
     public Settings() {
         super(SceneNames.Settings);
     }
@@ -38,11 +35,11 @@ public class Settings extends Scene {
         Log.debug(Settings.class, "loading {}", getSceneName());
         Pointf center = canvas.getCanvasCenter();
 
-        titleText = Text2D.create("Settings")
-                .withFont(Fonts.TitleTextFont)
-                .withTransform(Pointf.subtract(center, 100f, 200f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
-                .build();
-        drawableManager.addGameObject(titleText);
+        Text2D titleText = Text2D.create("Settings")
+            .withFont(Fonts.TitleTextFont)
+            .withTransform(Pointf.subtract(center, 100f, 200f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
+            .build();
+        drawableManager().addGameObject(titleText);
 
 //        difficultyText = Text2D.create("Game Difficulty")
 //                .withFont(Fonts.StatTextFont)
@@ -60,7 +57,7 @@ public class Settings extends Scene {
 //            user.getSettings().setGameStartDifficulty(GameStartDifficulty.values()[gameDifficulties.getSelectedOption()]);
 //        });
 
-        mainMenuButton = new BetterButton(this, canvas.getCanvasCenter().add(-100f, 150f), Shapes.ButtonSize);
+        BetterButton mainMenuButton = new BetterButton(this, canvas.getCanvasCenter().add(-100f, 150f), Shapes.ButtonSize);
         mainMenuButton.setText("Back");
         mainMenuButton.setFill(Color.darkGray);
         mainMenuButton.setFont(Fonts.ButtonTextFont);
@@ -70,40 +67,7 @@ public class Settings extends Scene {
             mouseButtonEvent.consume();
             FastJEngine.runLater(() -> FastJEngine.<SceneManager>getLogicManager().switchScenes(SceneNames.MainMenu), CoreLoopState.Update);
         });
+
         Log.debug(Settings.class, "loaded {}", getSceneName());
-    }
-
-    @Override
-    public void unload(FastJCanvas canvas) {
-        Log.debug(Settings.class, "unloading {}", getSceneName());
-        if (titleText != null) {
-            titleText.destroy(this);
-            titleText = null;
-        }
-
-        if (difficultyText != null) {
-            difficultyText.destroy(this);
-            difficultyText = null;
-        }
-
-        if (gameDifficulties != null) {
-            gameDifficulties.destroy(this);
-            gameDifficulties = null;
-        }
-
-        if (mainMenuButton != null) {
-            mainMenuButton.destroy(this);
-            mainMenuButton = null;
-        }
-        setInitialized(false);
-        Log.debug(Settings.class, "unloaded {}", getSceneName());
-    }
-
-    @Override
-    public void fixedUpdate(FastJCanvas canvas) {
-    }
-
-    @Override
-    public void update(FastJCanvas canvas) {
     }
 }

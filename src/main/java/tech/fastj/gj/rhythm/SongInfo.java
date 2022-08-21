@@ -1,12 +1,12 @@
 package tech.fastj.gj.rhythm;
 
 import tech.fastj.engine.FastJEngine;
-
 import tech.fastj.input.keyboard.Keys;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.TreeMap;
 
@@ -62,8 +62,12 @@ public class SongInfo implements GeneralSongInfo {
         return noteLanes[index];
     }
 
-    public Collection<Keys> getLaneKeys() {
-        return Collections.unmodifiableCollection(laneKeys.values());
+    public List<Keys> getLaneKeys() {
+        return laneKeys.values().stream().toList();
+    }
+
+    public NavigableMap<Integer, Keys> getLaneKeysMap() {
+        return Collections.unmodifiableNavigableMap(laneKeys);
     }
 
     public Keys getLaneKey(int lane) {
@@ -118,12 +122,12 @@ public class SongInfo implements GeneralSongInfo {
         }
         SongInfo songInfo = (SongInfo) o;
         return Double.compare(songInfo.bpm, bpm) == 0
-                && beatPeekCount == songInfo.beatPeekCount
-                && Double.compare(songInfo.firstBeatOffset, firstBeatOffset) == 0
-                && Arrays.equals(notes, songInfo.notes)
-                && Arrays.equals(noteLanes, songInfo.noteLanes)
-                && Objects.equals(laneKeys, songInfo.laneKeys)
-                && Objects.equals(musicPath, songInfo.musicPath);
+            && beatPeekCount == songInfo.beatPeekCount
+            && Double.compare(songInfo.firstBeatOffset, firstBeatOffset) == 0
+            && Arrays.equals(notes, songInfo.notes)
+            && Arrays.equals(noteLanes, songInfo.noteLanes)
+            && Objects.equals(laneKeys, songInfo.laneKeys)
+            && Objects.equals(musicPath, songInfo.musicPath);
     }
 
     @Override
@@ -137,14 +141,14 @@ public class SongInfo implements GeneralSongInfo {
     @Override
     public String toString() {
         return "SongInfo{" +
-                "bpm=" + bpm +
-                ", beatPeekCount=" + beatPeekCount +
-                ", firstBeatOffset=" + firstBeatOffset +
-                ", nextIndex=" + nextIndex +
-                ", musicPath='" + musicPath + '\'' +
-                ", notes=" + Arrays.toString(notes) +
-                ", noteLanes=" + Arrays.toString(noteLanes) +
-                ", laneKeys=" + laneKeys +
-                '}';
+            "bpm=" + bpm +
+            ", beatPeekCount=" + beatPeekCount +
+            ", firstBeatOffset=" + firstBeatOffset +
+            ", nextIndex=" + nextIndex +
+            ", musicPath='" + musicPath + '\'' +
+            ", notes=" + Arrays.toString(notes) +
+            ", noteLanes=" + Arrays.toString(noteLanes) +
+            ", laneKeys=" + laneKeys +
+            '}';
     }
 }
