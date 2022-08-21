@@ -102,19 +102,23 @@ public class MainGame extends Scene implements EventObserver<ConductorFinishedEv
             FastJEngine.runLater(() -> changeState(GameState.Paused));
         });
         pauseButton.setShouldRender(false);
+
+        pauseMenu = new PauseMenu(this);
+        pauseMenu.setShouldRender(false);
     }
 
     private void createListeners() {
         pauseListener = new KeyboardActionListener() {
             @Override
             public void onKeyReleased(KeyboardStateEvent event) {
-                if (event.isConsumed() || gameState != GameState.Playing || conductor.musicSource.getCurrentPlaybackState() != PlaybackState.Playing) {
+                PlaybackState conductorPlaybackState = conductor.musicSource.getCurrentPlaybackState();
+                if (event.isConsumed() || conductorPlaybackState == PlaybackState.Stopped) {
                     return;
                 }
 
                 if (event.getKey() == Keys.P || event.getKey() == Keys.Escape) {
                     event.consume();
-                    FastJEngine.runLater(() -> changeState(GameState.Paused));
+                    FastJEngine.runLater(() -> changeState(gameState == GameState.Playing ? GameState.Paused : GameState.Playing));
                 }
             }
         };
@@ -122,6 +126,7 @@ public class MainGame extends Scene implements EventObserver<ConductorFinishedEv
         inputMatcher.setOnLaneKeyPressed(event -> {
             for (KeyCircle keyCircle : keyCircles) {
                 if (keyCircle.getKey() == event.getKey()) {
+                    System.out.println("found key " + event.getKey());
                     keyCircle.setFill(Color.white, false);
                     return;
                 }
@@ -162,11 +167,6 @@ public class MainGame extends Scene implements EventObserver<ConductorFinishedEv
         Log.info(MainGame.class, "unloaded {}", getSceneName());
     }
 
-    @Override
-    public void fixedUpdate(FastJCanvas canvas) {
-        Log.info("listeners: {}", getBehaviorListeners().size());
-    }
-
     public void changeState(GameState next) {
         Log.debug(MainGame.class, "changing state from {} to {}", gameState, next);
 
@@ -194,25 +194,19 @@ public class MainGame extends Scene implements EventObserver<ConductorFinishedEv
 
                     FastJEngine.getGameLoop().addEventObserver(this, ConductorFinishedEvent.class);
                     pauseButton.setShouldRender(true);
-                } else if (gameState == GameState.Paused) {
-                    pauseMenu.setShouldRender(false);
-                    conductor.setPaused(false);
+                    inputManager().addKeyboardActionListener(pauseListener);
                 }
 
-                inputManager().addKeyboardActionListener(pauseListener);
+                pauseMenu.setShouldRender(false);
+                conductor.setPaused(false);
+
                 inputManager().addMouseActionListener(pauseButton);
                 inputManager().addKeyboardActionListener(inputMatcher);
             }
             case Paused -> {
-                if (pauseMenu == null) {
-                    pauseMenu = new PauseMenu(this);
-                    drawableManager().addUIElement(pauseMenu);
-                }
-
                 conductor.setPaused(true);
                 pauseMenu.setShouldRender(true);
 
-                inputManager().removeKeyboardActionListener(pauseListener);
                 inputManager().removeMouseActionListener(pauseButton);
                 inputManager().removeKeyboardActionListener(inputMatcher);
             }
