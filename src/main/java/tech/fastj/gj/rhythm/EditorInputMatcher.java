@@ -1,10 +1,10 @@
 package tech.fastj.gj.rhythm;
 
 import tech.fastj.engine.FastJEngine;
+import tech.fastj.gj.util.RhythmUtil;
 import tech.fastj.input.keyboard.KeyboardActionListener;
 import tech.fastj.input.keyboard.Keys;
 import tech.fastj.input.keyboard.events.KeyboardStateEvent;
-import tech.fastj.math.Maths;
 import tech.fastj.systems.audio.state.PlaybackState;
 
 import java.util.ArrayList;
@@ -52,27 +52,16 @@ public final class EditorInputMatcher implements KeyboardActionListener {
     }
 
     private double checkNotes(double inputBeatPosition, Keys inputKey) {
-        int cutBeatPosition = (int) inputBeatPosition;
+        double beatPosition = RhythmUtil.adjustBeatPosition(inputBeatPosition);
 
-        double adjustedBeatPosition;
-        if (inputBeatPosition <= cutBeatPosition + 0.25d) {
-            adjustedBeatPosition = Maths.snap((float) inputBeatPosition, cutBeatPosition, (float) (cutBeatPosition + 0.25d));
-        } else if (inputBeatPosition <= cutBeatPosition + 0.5d) {
-            adjustedBeatPosition = Maths.snap((float) inputBeatPosition, (float) (cutBeatPosition + 0.25d), (float) (cutBeatPosition + 0.5d));
-        } else if (inputBeatPosition <= cutBeatPosition + 0.75d) {
-            adjustedBeatPosition = Maths.snap((float) inputBeatPosition, (float) (cutBeatPosition + 0.5d), (float) (cutBeatPosition + 0.75d));
-        } else {
-            adjustedBeatPosition = Maths.snap((float) inputBeatPosition, (float) (cutBeatPosition + 0.75d), cutBeatPosition + 1);
-        }
-
-        if (consumedNotes.contains(adjustedBeatPosition)) {
+        if (consumedNotes.contains(beatPosition)) {
             return -1;
         }
 
-        consumedNotes.add(adjustedBeatPosition);
-        recordedNotes.add(new RecordedNote(adjustedBeatPosition, songInfo.getKeyLane(inputKey)));
+        consumedNotes.add(beatPosition);
+        recordedNotes.add(new RecordedNote(beatPosition, songInfo.getKeyLane(inputKey)));
 
-        return adjustedBeatPosition;
+        return beatPosition;
     }
 
     public List<RecordedNote> getRecordedNotes() {

@@ -15,7 +15,7 @@ public class ContentBox extends UIElement<InputActionEvent> {
     public static final String DefaultFormat = "%s" + DefaultStatSeparator + "%s";
     public static final String DefaultContent = "None";
 
-    private final String name;
+    private String name;
     private final String format;
     private String content;
     private Text2D statDisplay;
@@ -44,6 +44,11 @@ public class ContentBox extends UIElement<InputActionEvent> {
 
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+        updateStatDisplay();
     }
 
     public String getFormat() {

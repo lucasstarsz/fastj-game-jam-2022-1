@@ -3,27 +3,23 @@ package tech.fastj.gj.scenes.game;
 import tech.fastj.engine.FastJEngine;
 import tech.fastj.gameloop.event.EventObserver;
 import tech.fastj.gj.gameobjects.KeyCircle;
-import tech.fastj.gj.gameobjects.MusicNote;
 import tech.fastj.gj.rhythm.Conductor;
 import tech.fastj.gj.rhythm.ConductorFinishedEvent;
 import tech.fastj.gj.rhythm.GameInputMatcher;
 import tech.fastj.gj.rhythm.SongInfo;
-import tech.fastj.gj.scripts.MusicNoteMovement;
 import tech.fastj.gj.ui.ContentBox;
 import tech.fastj.gj.ui.Notice;
 import tech.fastj.gj.ui.PauseButton;
 import tech.fastj.gj.user.User;
 import tech.fastj.gj.util.Colors;
 import tech.fastj.gj.util.Fonts;
+import tech.fastj.gj.util.RhythmUtil;
 import tech.fastj.gj.util.SceneNames;
-import tech.fastj.gj.util.Shapes;
 import tech.fastj.graphics.display.FastJCanvas;
-import tech.fastj.graphics.util.DrawUtil;
 import tech.fastj.input.keyboard.KeyboardActionListener;
 import tech.fastj.input.keyboard.Keys;
 import tech.fastj.input.keyboard.events.KeyboardStateEvent;
 import tech.fastj.logging.Log;
-import tech.fastj.math.Point;
 import tech.fastj.math.Pointf;
 import tech.fastj.systems.audio.state.PlaybackState;
 import tech.fastj.systems.control.Scene;
@@ -134,21 +130,7 @@ public class MainGame extends Scene implements EventObserver<ConductorFinishedEv
     }
 
     private void resetConductor(FastJCanvas canvas) {
-        conductor = new Conductor(songInfo, this, true);
-        conductor.setSpawnMusicNote((note, noteLane) -> {
-            Pointf noteStartingLocation = new Pointf((canvas.getCanvasCenter().x) + (noteLane * Shapes.NoteSize * 2.5f), -Shapes.NoteSize / 2f);
-            Color musicNoteColor = DrawUtil.randomColor();
-            MusicNote musicNote = new MusicNote(noteStartingLocation, Shapes.NoteSize)
-                .setFill(musicNoteColor)
-                .setOutline(MusicNote.DefaultOutlineStroke, musicNoteColor.darker());
-
-            double noteTravelDistance = canvas.getResolution().y - (Shapes.NoteSize * 4f);
-            MusicNoteMovement musicNoteMovement = new MusicNoteMovement(conductor, note, noteTravelDistance);
-            musicNote.addLateBehavior(musicNoteMovement, this);
-            drawableManager().addGameObject(musicNote);
-        });
-        drawableManager().addGameObject(conductor);
-
+        conductor = RhythmUtil.createConductor(this, songInfo, canvas);
         inputMatcher = new GameInputMatcher(
             conductor,
             songInfo,
@@ -208,7 +190,7 @@ public class MainGame extends Scene implements EventObserver<ConductorFinishedEv
                     songNameBox.setContent(conductor.musicInfo.getSongName());
                     songNameBox.setShouldRender(true);
 
-                    createLaneKeys(keyCircles);
+                    RhythmUtil.createLaneKeys(this, conductor, keyCircles);
 
                     FastJEngine.getGameLoop().addEventObserver(this, ConductorFinishedEvent.class);
                     pauseButton.setShouldRender(true);
@@ -254,29 +236,6 @@ public class MainGame extends Scene implements EventObserver<ConductorFinishedEv
             }
         }
         gameState = next;
-    }
-
-    public void createLaneKeys(List<KeyCircle> keyCircles) {
-        List<Keys> laneKeys = conductor.musicInfo.getLaneKeys();
-        FastJCanvas canvas = FastJEngine.getCanvas();
-        Pointf canvasCenter = canvas.getCanvasCenter();
-        Point canvasResolution = canvas.getResolution();
-
-        for (int i = 0; i < laneKeys.size(); i++) {
-            Keys laneKey = laneKeys.get(i);
-            Pointf laneStartingLocation = new Pointf(
-                canvasCenter.x + ((i + 1) * Shapes.NoteSize * 2.5f),
-                canvasResolution.y - (Shapes.NoteSize * 4f)
-            );
-
-            KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma", this)
-                .setFill(Color.gray)
-                .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
-                .setTranslation(laneStartingLocation);
-
-            keyCircles.add(keyCircle);
-            drawableManager().addGameObject(keyCircle);
-        }
     }
 
     @Override

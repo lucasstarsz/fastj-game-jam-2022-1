@@ -4,20 +4,18 @@ import tech.fastj.engine.FastJEngine;
 import tech.fastj.gameloop.CoreLoopState;
 import tech.fastj.gameloop.event.EventObserver;
 import tech.fastj.gj.gameobjects.KeyCircle;
-import tech.fastj.gj.gameobjects.MusicNote;
 import tech.fastj.gj.rhythm.Conductor;
 import tech.fastj.gj.rhythm.ConductorFinishedEvent;
 import tech.fastj.gj.rhythm.EditableSongInfo;
 import tech.fastj.gj.rhythm.EditorInputMatcher;
 import tech.fastj.gj.rhythm.RecordedNote;
 import tech.fastj.gj.scenes.game.MainGame;
-import tech.fastj.gj.scripts.MusicNoteMovement;
 import tech.fastj.gj.ui.ContentBox;
 import tech.fastj.gj.ui.Notice;
 import tech.fastj.gj.util.Colors;
 import tech.fastj.gj.util.Fonts;
+import tech.fastj.gj.util.RhythmUtil;
 import tech.fastj.gj.util.SceneNames;
-import tech.fastj.gj.util.Shapes;
 import tech.fastj.gj.util.SpringUtilities;
 import tech.fastj.graphics.dialog.DialogConfig;
 import tech.fastj.graphics.dialog.DialogMessageTypes;
@@ -25,10 +23,8 @@ import tech.fastj.graphics.dialog.DialogOptions;
 import tech.fastj.graphics.dialog.DialogUtil;
 import tech.fastj.graphics.display.FastJCanvas;
 import tech.fastj.graphics.display.SimpleDisplay;
-import tech.fastj.graphics.util.DrawUtil;
 import tech.fastj.input.keyboard.Keys;
 import tech.fastj.logging.Log;
-import tech.fastj.math.Maths;
 import tech.fastj.math.Pointf;
 import tech.fastj.systems.control.Scene;
 import tech.fastj.systems.control.SceneManager;
@@ -39,14 +35,12 @@ import java.awt.Dimension;
 import java.awt.FileDialog;
 import java.awt.Font;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -75,34 +69,59 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
 
     private ContentBox songNameBox;
     private ContentBox beatBox;
-    private List<KeyCircle> keyCircles;
-    private List<MusicNote> musicNotes;
+    private final List<KeyCircle> keyCircles;
 
     private static final EditableSongInfo MainMenuSwitch = new EditableSongInfo();
 
     public SongEditor() {
         super(SceneNames.SongEditor);
+        keyCircles = new ArrayList<>();
     }
 
     @Override
     public void load(FastJCanvas canvas) {
         Log.debug(SongEditor.class, "loading {}", getSceneName());
 
-        resetConductor(canvas);
         createUI();
-        createListeners();
         changeState(EditorState.Setup);
 
         Log.debug(SongEditor.class, "loaded {}", getSceneName());
     }
 
     private void createUI() {
+        songNameBox = new ContentBox(this, "Now Recording", "???");
+        songNameBox.setTranslation(new Pointf(30f));
+        songNameBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
+        songNameBox.getStatDisplay().setFill(Colors.Snowy);
+
+        beatBox = new ContentBox(this, "Beat", "???");
+        beatBox.setTranslation(new Pointf(30f, 50f));
+        beatBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
+        beatBox.getStatDisplay().setFill(Colors.Snowy);
     }
 
     private void createListeners() {
+        inputMatcher.setOnLaneKeyPressed((event, beat) -> {
+            for (KeyCircle keyCircle : keyCircles) {
+                if (keyCircle.getKey() == event.getKey()) {
+                    keyCircle.setFill(Color.white, false);
+
+                    if (beat != -1) {
+                        Notice notice = new Notice("'" + event.getKey()
+                            .name() + "' key at beat " + beat, new Pointf(100f, 50f), this);
+                        notice.setFill(Color.black);
+                        notice.setFont(Fonts.StatTextFont);
+                        drawableManager().addGameObject(notice);
+                    }
+                    return;
+                }
+            }
+        });
     }
 
     private void resetConductor(FastJCanvas canvas) {
+        conductor = RhythmUtil.createConductor(this, songInfo, canvas);
+        inputMatcher = new EditorInputMatcher(conductor, songInfo);
     }
 
     @Override
@@ -110,31 +129,7 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
         Log.debug(MainGame.class, "unloading {}", getSceneName());
         editorState = null;
 
-        if (songNameBox != null) {
-            songNameBox.destroy(this);
-            songNameBox = null;
-        }
-
-        if (beatBox != null) {
-            beatBox.destroy(this);
-            beatBox = null;
-        }
-
-        if (keyCircles != null) {
-            for (KeyCircle keyCircle : keyCircles) {
-                keyCircle.destroy(this);
-            }
-            keyCircles.clear();
-            keyCircles = null;
-        }
-
-        if (musicNotes != null) {
-            for (MusicNote musicNote : musicNotes) {
-                musicNote.destroy(this);
-            }
-            musicNotes.clear();
-            musicNotes = null;
-        }
+        keyCircles.clear();
 
         setInitialized(false);
         Log.debug(MainGame.class, "unloaded {}", getSceneName());
@@ -144,20 +139,7 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
     public void update(FastJCanvas canvas) {
         if (editorState == EditorState.Recording || editorState == EditorState.Review) {
             double inputBeatPosition = conductor.songPositionInBeats;
-            int cutBeatPosition = (int) inputBeatPosition;
-
-            double adjustedBeatPosition;
-            if (inputBeatPosition <= cutBeatPosition + 0.25d) {
-                adjustedBeatPosition = Maths.snap((float) inputBeatPosition, cutBeatPosition, (float) (cutBeatPosition + 0.25d));
-            } else if (inputBeatPosition <= cutBeatPosition + 0.5d) {
-                adjustedBeatPosition = Maths.snap((float) inputBeatPosition, (float) (cutBeatPosition + 0.25d), (float) (cutBeatPosition + 0.5d));
-            } else if (inputBeatPosition <= cutBeatPosition + 0.75d) {
-                adjustedBeatPosition = Maths.snap((float) inputBeatPosition, (float) (cutBeatPosition + 0.5d), (float) (cutBeatPosition + 0.75d));
-            } else {
-                adjustedBeatPosition = Maths.snap((float) inputBeatPosition, (float) (cutBeatPosition + 0.75d), cutBeatPosition + 1);
-            }
-
-            beatBox.setContent("" + adjustedBeatPosition);
+            beatBox.setContent("" + RhythmUtil.adjustBeatPosition(inputBeatPosition));
         }
     }
 
@@ -170,8 +152,12 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
                     conductor.setPaused(true);
                 }
 
+                songNameBox.setShouldRender(false);
+                beatBox.setShouldRender(false);
+
                 SwingUtilities.invokeLater(() -> {
                     EditableSongInfo editableSongInfo;
+
                     do {
                         editableSongInfo = setupSongInfo();
 
@@ -181,10 +167,10 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
                         } else if (editableSongInfo != null && editableSongInfo.equals(MainMenuSwitch)) {
                             return;
                         }
-
                     } while (editableSongInfo == null);
 
                     songInfo = editableSongInfo;
+
                     if (editorState == EditorState.Results) {
                         return;
                     }
@@ -193,154 +179,55 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
                 });
             }
             case Recording -> {
-                conductor = new Conductor(songInfo, this, true);
-                FastJCanvas canvas = FastJEngine.getCanvas();
+                resetConductor(FastJEngine.getCanvas());
+                createListeners();
 
-                songNameBox = new ContentBox(this, "Now Recording", "" + conductor.musicInfo.getSongName());
-                songNameBox.setTranslation(new Pointf(30f));
-                songNameBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
-                songNameBox.getStatDisplay().setFill(Colors.Snowy);
-                drawableManager().addUIElement(songNameBox);
+                songNameBox.setName("Now Recording");
+                songNameBox.setContent(songInfo.songName);
+                songNameBox.setShouldRender(true);
+                beatBox.setShouldRender(true);
 
-                beatBox = new ContentBox(this, "Beat", "" + conductor.songPositionInBeats);
-                beatBox.setTranslation(new Pointf(30f, 50f));
-                beatBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
-                beatBox.getStatDisplay().setFill(Colors.Snowy);
-                drawableManager().addUIElement(beatBox);
-
-                Collection<Keys> laneKeys = conductor.musicInfo.getLaneKeys();
-                int laneKeyIncrement = 1;
-                keyCircles = new ArrayList<>();
-                for (Keys laneKey : laneKeys) {
-                    Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x) + (laneKeyIncrement * Shapes.NoteSize * 2.5f), canvas.getResolution().y - (Shapes.NoteSize * 4f));
-                    KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma", this)
-                        .setFill(Color.gray)
-                        .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
-                        .setTranslation(laneStartingLocation);
-                    keyCircles.add(keyCircle);
-                    drawableManager().addGameObject(keyCircle);
-                    laneKeyIncrement++;
-                }
-
-                drawableManager().addGameObject(conductor);
-
-                inputMatcher = new EditorInputMatcher(conductor, songInfo);
+                RhythmUtil.createLaneKeys(this, conductor, keyCircles);
                 inputManager().addKeyboardActionListener(inputMatcher);
-                inputMatcher.setOnLaneKeyPressed((event, beat) -> {
-                    for (KeyCircle keyCircle : keyCircles) {
-                        if (keyCircle.getKey() == event.getKey()) {
-                            keyCircle.setFill(Color.white, false);
-
-                            if (beat != -1) {
-                                Notice notice = new Notice("'" + event.getKey()
-                                    .name() + "' key at beat " + beat, new Pointf(100f, 50f), this);
-                                notice.setFill(Color.black);
-                                notice.setFont(Fonts.StatTextFont);
-                                drawableManager().addGameObject(notice);
-                            }
-                            return;
-                        }
-                    }
-                });
                 songInfo.resetNextIndex();
+
                 FastJEngine.getGameLoop().addEventObserver(this, ConductorFinishedEvent.class);
             }
             case Review -> {
-                conductor = new Conductor(songInfo, this, true);
-                FastJCanvas canvas = FastJEngine.getCanvas();
+                resetConductor(FastJEngine.getCanvas());
+                createListeners();
 
-                musicNotes = new ArrayList<>();
-                conductor.setSpawnMusicNote((note, noteLane) -> {
-                    FastJEngine.log("spawn music note");
-                    Pointf noteStartingLocation = new Pointf((canvas.getCanvasCenter().x) + (noteLane * Shapes.NoteSize * 2.5f), -Shapes.NoteSize / 2f);
-                    MusicNote musicNote = new MusicNote(noteStartingLocation, Shapes.NoteSize)
-                        .setFill(DrawUtil.randomColor())
-                        .setOutline(MusicNote.DefaultOutlineStroke, DrawUtil.randomColor());
+                songNameBox.setName("Now Reviewing");
+                songNameBox.setShouldRender(true);
+                beatBox.setShouldRender(true);
 
-                    double noteTravelDistance = canvas.getResolution().y - (Shapes.NoteSize * 4f);
-                    MusicNoteMovement musicNoteMovement = new MusicNoteMovement(conductor, note, noteTravelDistance);
-                    musicNote.addLateBehavior(musicNoteMovement, this);
-                    musicNotes.add(musicNote);
-                    drawableManager().addGameObject(musicNote);
-                });
-
-                songNameBox = new ContentBox(this, "Now Reviewing", "" + conductor.musicInfo.getSongName());
-                songNameBox.setTranslation(new Pointf(30f));
-                songNameBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
-                songNameBox.getStatDisplay().setFill(Colors.Snowy);
-                drawableManager().addUIElement(songNameBox);
-
-                beatBox = new ContentBox(this, "Beat", "" + conductor.songPositionInBeats);
-                beatBox.setTranslation(new Pointf(30f, 50f));
-                beatBox.getStatDisplay().setFont(Fonts.MonoStatTextFont);
-                beatBox.getStatDisplay().setFill(Colors.Snowy);
-                drawableManager().addUIElement(beatBox);
-
-                Collection<Keys> laneKeys = conductor.musicInfo.getLaneKeys();
-                int laneKeyIncrement = 1;
-                keyCircles = new ArrayList<>();
-                for (Keys laneKey : laneKeys) {
-                    Pointf laneStartingLocation = new Pointf((canvas.getCanvasCenter().x) + (laneKeyIncrement * Shapes.NoteSize * 2.5f), canvas.getResolution().y - (Shapes.NoteSize * 4f));
-                    KeyCircle keyCircle = (KeyCircle) new KeyCircle(laneKey, Shapes.NoteSize, "Tahoma", this)
-                        .setFill(Color.gray)
-                        .setOutline(KeyCircle.DefaultOutlineStroke, KeyCircle.DefaultOutlineColor)
-                        .setTranslation(laneStartingLocation);
-                    keyCircles.add(keyCircle);
-                    drawableManager().addGameObject(keyCircle);
-                    laneKeyIncrement++;
-                }
-
-                drawableManager().addGameObject(conductor);
+                RhythmUtil.createLaneKeys(this, conductor, keyCircles);
+                inputManager().addKeyboardActionListener(inputMatcher);
                 songInfo.resetNextIndex();
+
                 FastJEngine.getGameLoop().addEventObserver(this, ConductorFinishedEvent.class);
             }
             case Results -> {
-                if (editorState == EditorState.Recording) {
-                    inputManager().removeKeyboardActionListener(inputMatcher);
-                }
                 if (editorState == EditorState.Recording || editorState == EditorState.Review) {
-                    if (keyCircles != null) {
-                        for (KeyCircle keyCircle : keyCircles) {
-                            keyCircle.destroy(this);
-                        }
-                        keyCircles.clear();
-                        keyCircles = null;
+                    if (editorState == EditorState.Recording) {
+                        inputManager().removeKeyboardActionListener(inputMatcher);
                     }
 
-                    if (musicNotes != null) {
-                        for (MusicNote musicNote : musicNotes) {
-                            musicNote.destroy(this);
-                        }
-                        musicNotes.clear();
-                        musicNotes = null;
+                    for (KeyCircle keyCircle : keyCircles) {
+                        keyCircle.destroy(this);
                     }
+                    keyCircles.clear();
 
-                    if (songNameBox != null) {
-                        songNameBox.destroy(this);
-                        songNameBox = null;
-                    }
+                    songNameBox.setShouldRender(false);
+                    beatBox.setShouldRender(false);
 
-                    if (beatBox != null) {
-                        beatBox.destroy(this);
-                        beatBox = null;
-                    }
-
-                    drawableManager().removeGameObject(conductor);
                     conductor.setPaused(true);
                     conductor.destroy(this);
-                    conductor = null;
 
                     FastJEngine.getGameLoop().removeEventObserver(this, ConductorFinishedEvent.class);
                 }
 
-                if (editorState == EditorState.Setup || inputMatcher == null) {
-                    SwingUtilities.invokeLater(() -> {
-                        double[] notes = songInfo.notes;
-                        int[] noteLanes = songInfo.noteLanes;
-
-                        editRecordedNotes(notes, noteLanes);
-                    });
-                } else {
+                if (editorState == EditorState.Recording) {
                     SwingUtilities.invokeLater(() -> {
                         List<RecordedNote> recordedNotes = inputMatcher.getRecordedNotes();
                         double[] notes = recordedNotes.stream().mapToDouble(RecordedNote::note).toArray();
@@ -348,6 +235,8 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
 
                         editRecordedNotes(notes, noteLanes);
                     });
+                } else {
+                    SwingUtilities.invokeLater(() -> editRecordedNotes(songInfo.notes, songInfo.noteLanes));
                 }
             }
         }
@@ -419,15 +308,12 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
                             }
 
                             return directory + file + (file.endsWith(".json") ? "" : ".json");
-                        },
-                        true
+                        }
                     );
 
                     if (path != null) {
                         try {
-                            System.out.println(path);
                             path = path.replace('\\', '/');
-                            System.out.println(path);
                             Files.writeString(Path.of(path), songInfoJson, StandardCharsets.UTF_8);
                             DialogUtil.showMessageDialog(
                                 DialogConfig.create()
@@ -535,8 +421,7 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
                         }
 
                         return directory + file;
-                    },
-                    true
+                    }
                 );
 
                 System.out.println("result: " + path);
@@ -560,16 +445,7 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
                                 editableSongInfoRef.set(editableSongInfo);
                                 hasJsonFile.set(true);
 
-                                songNameCombo.right().setText(editableSongInfo.songName);
-                                bpmCombo.right().setText("" + editableSongInfo.bpm);
-                                beatPeekCombo.right().setText("" + editableSongInfo.beatPeekCount);
-                                beatOffsetCombo.right().setText("" + editableSongInfo.firstBeatOffset);
-                                musicPathInput.setText(editableSongInfo.musicPath);
-
-                                String laneKeysString = editableSongInfo.getLaneKeys().stream()
-                                    .map(Keys::name)
-                                    .collect(Collectors.joining(","));
-                                laneKeysCombo.right().setText(laneKeysString);
+                                fillUIWithJson(songNameCombo, bpmCombo, beatPeekCombo, beatOffsetCombo, laneKeysCombo, musicPathInput, editableSongInfo);
                             } catch (IOException exception) {
                                 displayException("Error while trying to load JSON file at \"" + path + "\"", exception);
                             }
@@ -583,16 +459,7 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
 
         if (songInfo != null) {
             editableSongInfoRef.set(songInfo);
-            songNameCombo.right().setText(songInfo.songName);
-            bpmCombo.right().setText("" + songInfo.bpm);
-            beatPeekCombo.right().setText("" + songInfo.beatPeekCount);
-            beatOffsetCombo.right().setText("" + songInfo.firstBeatOffset);
-            musicPathInput.setText(songInfo.musicPath);
-
-            String laneKeysString = songInfo.getLaneKeys().stream()
-                .map(Keys::name)
-                .collect(Collectors.joining(","));
-            laneKeysCombo.right().setText(laneKeysString);
+            fillUIWithJson(songNameCombo, bpmCombo, beatPeekCombo, beatOffsetCombo, laneKeysCombo, musicPathInput, songInfo);
         }
 
         musicPathLabel.setLabelFor(musicPathInput);
@@ -706,95 +573,47 @@ public class SongEditor extends Scene implements EventObserver<ConductorFinished
         }
     }
 
-    private String browseForPath(String title, int fileDialogType, FilenameFilter filter, String invalidFormatMessage, String firstFileType, String... otherFileTypes) {
-        String file = null;
-        String directory = null;
+    private void fillUIWithJson(LabeledField songNameCombo, LabeledField bpmCombo, LabeledField beatPeekCombo, LabeledField beatOffsetCombo,
+                                LabeledField laneKeysCombo, JTextField musicPathInput, EditableSongInfo songInfo) {
+        songNameCombo.right().setText(songInfo.songName);
+        bpmCombo.right().setText("" + songInfo.bpm);
+        beatPeekCombo.right().setText("" + songInfo.beatPeekCount);
+        beatOffsetCombo.right().setText("" + songInfo.firstBeatOffset);
+        musicPathInput.setText(songInfo.musicPath);
 
-        while (file == null) {
-            FileDialog songLoaderDialog = new FileDialog(FastJEngine.<SimpleDisplay>getDisplay().getWindow(), title, fileDialogType);
-
-            songLoaderDialog.setDirectory(System.getProperty("user.home"));
-            songLoaderDialog.setFilenameFilter(filter);
-            songLoaderDialog.setMultipleMode(false);
-            songLoaderDialog.setVisible(true);
-
-            file = songLoaderDialog.getFile();
-            directory = songLoaderDialog.getDirectory();
-
-            if (file == null) {
-                return null;
-            }
-
-            if (!file.endsWith(firstFileType)) {
-                boolean matchOtherFileType = false;
-                for (String otherFileType : otherFileTypes) {
-                    if (file.endsWith(otherFileType)) {
-                        matchOtherFileType = true;
-                        break;
-                    }
-                }
-
-                if (!matchOtherFileType) {
-                    DialogUtil.showMessageDialog(
-                        DialogConfig.create()
-                            .withParentComponent(FastJEngine.<SimpleDisplay>getDisplay().getWindow())
-                            .withTitle("Invalid file format")
-                            .withPrompt(invalidFormatMessage)
-                            .build()
-                    );
-                    file = null;
-                }
-            }
-        }
-
-        return directory + file;
+        String laneKeysString = songInfo.getLaneKeys().stream()
+            .map(Keys::name)
+            .collect(Collectors.joining(","));
+        laneKeysCombo.right().setText(laneKeysString);
     }
 
-    private String browseForPath(String title, int fileDialogType, String initialName, BiFunction<String, String, String> fileAction, boolean returnOnNull) {
+    private String browseForPath(String title, int fileDialogType, String initialName, BiFunction<String, String, String> fileAction) {
         String file;
 
         do {
-            System.out.println("next");
-            FileDialog songSaverDialog = new FileDialog(FastJEngine.<SimpleDisplay>getDisplay().getWindow(), title, fileDialogType);
+            FileDialog songDialog = new FileDialog(FastJEngine.<SimpleDisplay>getDisplay().getWindow(), title, fileDialogType);
 
-            songSaverDialog.setDirectory(System.getProperty("user.home"));
-            songSaverDialog.setMultipleMode(false);
-            songSaverDialog.setFile(initialName);
-            songSaverDialog.setVisible(true);
-
-            file = fileAction.apply(songSaverDialog.getDirectory(), songSaverDialog.getFile());
-
-            if (file == null && returnOnNull) {
-                System.out.println("null");
-                return null;
+            if (fileDialogType == FileDialog.LOAD) {
+                songDialog.setFilenameFilter((dir, name) -> name.endsWith(".wav")
+                    || name.endsWith(".json")
+                    || name.endsWith(".ogg")
+                    || name.endsWith(".mp3")
+                );
             }
-        } while (file == null || file.isBlank());
 
-        System.out.println("? " + file);
-        return file;
-    }
+            songDialog.setDirectory(System.getProperty("user.home"));
+            songDialog.setMultipleMode(false);
+            songDialog.setFile(initialName);
+            songDialog.setVisible(true);
 
-    private String browseForPath(String title, int fileDialogType, String initialName) {
-        String file = null;
-        String directory = null;
-
-        while (file == null) {
-            FileDialog songSaverDialog = new FileDialog(FastJEngine.<SimpleDisplay>getDisplay().getWindow(), title, fileDialogType);
-
-            songSaverDialog.setDirectory(System.getProperty("user.home"));
-            songSaverDialog.setMultipleMode(false);
-            songSaverDialog.setFile(initialName + (initialName.endsWith(".json") ? "" : ".json"));
-            songSaverDialog.setVisible(true);
-
-            directory = songSaverDialog.getDirectory();
-            file = songSaverDialog.getFile();
+            file = fileAction.apply(songDialog.getDirectory(), songDialog.getFile());
 
             if (file == null) {
                 return null;
             }
-        }
+        } while (file.isBlank());
 
-        return directory + file;
+        return file;
     }
 
     private void constrainMusicPathUI(JPanel panel, SpringLayout layout, LabeledField laneKeysCombo, JLabel label, JTextField input, JButton button) {
