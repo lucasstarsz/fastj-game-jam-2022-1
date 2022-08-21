@@ -11,7 +11,7 @@ import com.formdev.flatlaf.FlatDarkLaf;
 
 public class FastJGameJam2022 {
 
-    public static final String GameName = "FastJ Game Jam 2022.1";
+    public static final String GameName = "Rhythm Game";
 
     public static void main(String[] args) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());

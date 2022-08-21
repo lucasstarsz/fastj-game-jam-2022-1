@@ -13,7 +13,6 @@ import tech.fastj.graphics.display.FastJCanvas;
 import tech.fastj.graphics.game.Text2D;
 import tech.fastj.logging.Log;
 import tech.fastj.math.Pointf;
-import tech.fastj.math.Transform2D;
 import tech.fastj.systems.audio.AudioEvent;
 import tech.fastj.systems.audio.MemoryAudio;
 import tech.fastj.systems.control.Scene;
@@ -38,8 +37,8 @@ public class MainMenu extends Scene {
         Text2D titleText = Text2D.create(FastJGameJam2022.GameName)
             .withFill(Colors.Snowy)
             .withFont(Fonts.TitleTextFont)
-            .withTransform(Pointf.subtract(center, 260f, 200f), Transform2D.DefaultRotation, Transform2D.DefaultScale)
             .build();
+        titleText.setTranslation(Pointf.subtract(center, titleText.width() / 2f, 200f));
         drawableManager().addGameObject(titleText);
 
         BetterButton playButton = new BetterButton(this, Pointf.subtract(center, 225f, 50f), Shapes.ButtonSize);
