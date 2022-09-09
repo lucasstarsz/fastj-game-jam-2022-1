@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "tech.lucasz"
-version = "1.0.0"
+version = "1.0.1"
 description = "Rhythm game made for FastJ Game Jam 2022.1."
 
 application.mainClass.set("tech.fastj.gj.FastJGameJam2022")
@@ -55,6 +55,8 @@ jlink {
         val currentOs = org.gradle.internal.os.OperatingSystem.current()
 
         addExtraDependencies("slf4j", "gson")
+
+        skipInstaller = true
 
         installerOptions.addAll(
             listOf(
